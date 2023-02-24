@@ -407,7 +407,7 @@ void can_rx(uint8_t can_number) {
       if(bus_number == 2){
         can_send(&to_send, 0 , true);
       } else if (bus_number == 0){
-        can_send(&to_send, 2 , true);  //does not attempt to send anything currently unless value is set to 0, but then you're sending it over the same bus causing "disco mode"
+        can_send(&to_send, 0 , true);  //does not attempt to send anything currently unless value is set to 0, but then you're sending it over the same bus causing "disco mode"
       }
     }
 
