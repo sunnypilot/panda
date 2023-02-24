@@ -403,7 +403,12 @@ void can_rx(uint8_t can_number) {
       to_send.RDTR = to_push.RDTR;
       to_send.RDLR = to_push.RDLR;
       to_send.RDHR = to_push.RDHR;
-      can_send(&to_send, bus_fwd_num, true);
+      //can_send(&to_send, bus_fwd_num, true); //bypass safety_defaults.h for issues :p
+      if(bus_number == 2){
+        can_send(&to_send, 0 , true);
+      } else if (bus_number == 0){
+        can_send(&to_send, 2 , true);  //does not attempt to send anything currently unless value is set to 0, but then you're sending it over the same bus causing "disco mode"
+      }
     }
 
     can_rx_errs += safety_rx_hook(&to_push) ? 0U : 1U;

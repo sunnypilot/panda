@@ -44,10 +44,10 @@ static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   
   if (bus_num == 0) {
     bus_fwd = 2;
-    if (addr == 1265) {
-      send_mdps_enable_speed(to_fwd);
-    }
-    smdps_clu11();
+   // if (addr == 1265) {
+    //  send_mdps_enable_speed(to_fwd);
+    //}
+    //smdps_clu11();
   }
   if (bus_num == 2) {
     bus_fwd = 0;
