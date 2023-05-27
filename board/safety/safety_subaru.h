@@ -1,13 +1,16 @@
-const SteeringLimits SUBARU_STEERING_LIMITS = {
-  .max_steer = 2047,
-  .max_rt_delta = 940,
-  .max_rt_interval = 250000,
-  .max_rate_up = 50,
-  .max_rate_down = 70,
-  .driver_torque_factor = 50,
-  .driver_torque_allowance = 60,
-  .type = TorqueDriverLimited,
+#define SUBARU_LIMITS(steer) = {
+  .max_steer = (steer), \
+  .max_rt_delta = 940, \
+  .max_rt_interval = 250000, \
+  .max_rate_up = 50, \
+  .max_rate_down = 70, \
+  .driver_torque_factor = 50, \
+  .driver_torque_allowance = 60, \
+  .type = TorqueDriverLimited, \
 };
+
+const SteeringLimits SUBARU_STEERING_LIMITS = SUBARU_LIMITS(2047);
+const SteeringLimits SUBARU_STEERING_LIMITS_ALT = SUBARU_LIMITS(3071);
 
 const SteeringLimits SUBARU_GEN2_STEERING_LIMITS = {
   .max_steer = 1000,
@@ -15,17 +18,6 @@ const SteeringLimits SUBARU_GEN2_STEERING_LIMITS = {
   .max_rt_interval = 250000,
   .max_rate_up = 40,
   .max_rate_down = 40,
-  .driver_torque_factor = 50,
-  .driver_torque_allowance = 60,
-  .type = TorqueDriverLimited,
-};
-
-const SteeringLimits SUBARU_STEERING_LIMITS_ALT = {
-  .max_steer = 3071,
-  .max_rt_delta = 940,
-  .max_rt_interval = 250000,
-  .max_rate_up = 50,
-  .max_rate_down = 70,
   .driver_torque_factor = 50,
   .driver_torque_allowance = 60,
   .type = TorqueDriverLimited,
