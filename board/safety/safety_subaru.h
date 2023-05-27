@@ -1,4 +1,4 @@
-#define SUBARU_LIMITS(steer) = {
+#define SUBARU_LIMITS(steer) = { \
   .max_steer = (steer), \
   .max_rt_delta = 940, \
   .max_rt_interval = 250000, \
