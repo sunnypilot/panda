@@ -7,7 +7,7 @@
   .driver_torque_factor = 50, \
   .driver_torque_allowance = 60, \
   .type = TorqueDriverLimited, \
-};
+}
 
 const SteeringLimits SUBARU_STEERING_LIMITS = SUBARU_LIMITS(2047);
 const SteeringLimits SUBARU_STEERING_LIMITS_ALT = SUBARU_LIMITS(3071);
