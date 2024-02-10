@@ -253,9 +253,9 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   if ((addr == 500) && (bus_num == 0)) {
-    // is acc ready? (pushing acc button)
+    // is acc active?
     // note - steering wheel will need few seconds to adjust the torque
-    if (GET_BYTE(to_push, 2) >> 4 & 0x1) {
+    if (GET_BYTE(to_push, 2) >> 5 & 0x1) {
       steer_type = 1;
     } else {
       steer_type = 3;
