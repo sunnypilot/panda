@@ -37,15 +37,20 @@ static void send_steer_enable_speed(CAN_FIFOMailBox_TypeDef *to_fwd){
   int eps_cutoff_speed;
   int lkas_enable_speed = 65 * kph_factor;
   int apa_enable_speed = 0 * kph_factor;
+  int actual_speed = GET_BYTE(to_fwd, 4) << 8 | GET_BYTE(to_fwd, 5);
   int veh_speed = GET_BYTE(to_fwd, 4) | GET_BYTE(to_fwd, 5) << 8;
 
   eps_cutoff_speed = veh_speed;
 
   if(steer_type == 2) {
-    eps_cutoff_speed = apa_enable_speed >> 8 | ((apa_enable_speed << 8) & 0xFFFF);  //2kph with 128 factor
+    if (actual_speed < apa_enable_speed) {
+      eps_cutoff_speed = apa_enable_speed >> 8 | ((apa_enable_speed << 8) & 0xFFFF);  //2kph with 128 factor
+    }
   }
   else if (steer_type == 1) {
-    eps_cutoff_speed = lkas_enable_speed >> 8 | ((lkas_enable_speed << 8) & 0xFFFF);  //65kph with 128 factor
+    if (actual_speed < lkas_enable_speed) {
+      eps_cutoff_speed = lkas_enable_speed >> 8 | ((lkas_enable_speed << 8) & 0xFFFF);  //65kph with 128 factor
+    }
   }
 
   to_fwd->RDHR &= 0x00FF0000;  //clear speed and Checksum
