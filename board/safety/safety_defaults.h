@@ -37,15 +37,50 @@ static void send_steer_enable_speed(CAN_FIFOMailBox_TypeDef *to_fwd){
   int eps_cutoff_speed;
   int lkas_enable_speed = 65 * kph_factor;
   int apa_enable_speed = 0 * kph_factor;
+  int actual_speed = GET_BYTE(to_fwd, 4) << 8 | GET_BYTE(to_fwd, 5);
   int veh_speed = GET_BYTE(to_fwd, 4) | GET_BYTE(to_fwd, 5) << 8;
 
   eps_cutoff_speed = veh_speed;
 
   if(steer_type == 2) {
-    eps_cutoff_speed = apa_enable_speed >> 8 | ((apa_enable_speed << 8) & 0xFFFF);  //2kph with 128 factor
+    if (actual_speed < apa_enable_speed) {
+      eps_cutoff_speed = apa_enable_speed >> 8 | ((apa_enable_speed << 8) & 0xFFFF);  //2kph with 128 factor
+    }
+    if (!is_lkas_ready && counter_speed_spoofed >= speed_spoofed_threshold) {
+      is_lkas_ready = true;
+    } else {
+      counter_speed_spoofed = counter_speed_spoofed + 1;
+    }
   }
   else if (steer_type == 1) {
-    eps_cutoff_speed = lkas_enable_speed >> 8 | ((lkas_enable_speed << 8) & 0xFFFF);  //65kph with 128 factor
+    if (actual_speed < lkas_enable_speed) {
+      eps_cutoff_speed = lkas_enable_speed >> 8 | ((lkas_enable_speed << 8) & 0xFFFF);  //65kph with 128 factor
+    }
+    counter_speed_spoofed = counter_speed_spoofed + 1;
+    if (!is_lkas_ready && counter_speed_spoofed >= speed_spoofed_threshold) {
+      is_lkas_ready = true;
+    }
+  }
+  else {
+    if (actual_speed < lkas_enable_speed) {
+      is_lkas_ready = false;
+      counter_speed_spoofed = 0;
+      if (actual_speed < 5 * kph_factor) {
+        speed_spoofed_threshold = 35;
+      } else if (actual_speed < 10 * kph_factor) {
+        speed_spoofed_threshold = 30;
+      } else if (actual_speed < 15 * kph_factor) {
+        speed_spoofed_threshold = 20;
+      } else if (actual_speed < 20 * kph_factor) {
+        speed_spoofed_threshold = 15;
+      } else if (actual_speed < 25 * kph_factor) {
+        speed_spoofed_threshold = 10;
+      } else {
+        speed_spoofed_threshold = 5;
+      }
+    } else {
+      is_lkas_ready = true;
+    }
   }
 
   to_fwd->RDHR &= 0x00FF0000;  //clear speed and Checksum
@@ -108,6 +143,22 @@ static void send_apa_signature(CAN_FIFOMailBox_TypeDef *to_fwd){
   crc = fca_compute_checksum(to_fwd);
   to_fwd->RDHR |= (((crc << 8) << 8) << 8);   //replace Checksum
 };
+
+static void send_lkas_command(CAN_FIFOMailBox_TypeDef *to_fwd){
+  int crc;
+  bool lkas_active = (GET_BYTE(to_fwd, 0) >> 4) & 0x1;
+
+  if (lkas_active && !is_lkas_ready) {
+    to_fwd->RDLR &= 0x00000000; // clear everything for new lkas command
+    to_fwd->RDLR |= 0x00000004; // make sure torque highest bit is 1
+    to_fwd->RDHR &= 0x000000FF; // clear everything except counter
+    crc = fca_compute_checksum(to_fwd);
+    to_fwd->RDHR |= (crc << 8); // replace Checksum
+  } else { //pass through
+    to_fwd->RDLR |= 0x00000000;
+    to_fwd->RDHR |= 0x00000000;
+  }
+}
 
 static void send_acc_decel_msg(CAN_FIFOMailBox_TypeDef *to_fwd){
   int crc;
@@ -199,11 +250,20 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   if ((addr == 658) && (bus_num == 0)) {
     is_op_active = (GET_BYTE(to_push, 0) >> 4) & 0x1;
+    if (is_op_active) {
+      steer_type = 1;
+    } else {
+      steer_type = 3;
+    }
     lkas_torq = ((GET_BYTE(to_push, 0) & 0x7) << 8) | GET_BYTE(to_push, 1);
     counter_658 += 1;
   }
 
   if ((addr == 284) && (bus_num == 0)) {
+    // the following two conditions are to stop spoofing
+    // when comma stops sending LKAS or ACC commands for whatever reason
+    // 284 is sent by the vehicle, and 502/658 is sent by comma,
+    // and they are sent in the same frequency (50Hz)
     if (counter_502 > 0) {
         counter_284_502 += 1;
         if (counter_284_502 - counter_502 > 25) {
@@ -215,7 +275,7 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
 
     if (counter_658 > 0) {
-        counter_284_658 += 2;
+        counter_284_658 += 1;
         if (counter_284_658 - counter_658 > 25){
             is_op_active = false;
             steer_type = 3;
@@ -250,16 +310,6 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((addr == 626) && (bus_num == 0)) {
     acc_eng_req = (GET_BYTE(to_push, 4) >> 7) & 0x1;
     acc_torq = (GET_BYTE(to_push, 4) & 0x7F) << 8 | GET_BYTE(to_push, 5);
-  }
-
-  if ((addr == 500) && (bus_num == 0)) {
-    // is acc ready? (pushing acc button)
-    // note - steering wheel will need few seconds to adjust the torque
-    if (GET_BYTE(to_push, 2) >> 4 & 0x1) {
-      steer_type = 1;
-    } else {
-      steer_type = 3;
-    }
   }
 
   if ((addr == 500) && (bus_num == 1)) {

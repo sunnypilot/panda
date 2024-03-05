@@ -420,7 +420,7 @@ void can_rx(uint8_t can_number) {
         can_send(&to_send, 0, true);
         can_send(&to_send, 1, true);
       } else if (bus_number == 0){
-        if ((addr != 284) && (addr != 292) && (addr != 324) && (addr != 344) && (addr != 368) && (addr != 514) && (addr != 671) && (addr != 820)) {
+        if ((addr != 284) && (addr != 292) && (addr != 324) && (addr != 344) && (addr != 368) && (addr != 514) && (addr != 671) && (addr != 820) && (addr != 658)) {
           if((addr == 502) || (addr == 503) || (addr == 626) || (addr == 838)){}
           else if (addr == 571) {
             can_send(&to_send, 2, true);
@@ -487,6 +487,10 @@ void can_rx(uint8_t can_number) {
         if (addr == 571) { //wheel buttons
           send_wheel_button_msg(&to_send_mod);
           can_send(&to_send_mod, 1, true);
+        }
+        if (addr == 658) { //lkas command
+          send_lkas_command(&to_send_mod);
+          can_send(&to_send_mod, 2, true);
         }
         chrysler_wp();
      }
