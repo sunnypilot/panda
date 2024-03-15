@@ -105,9 +105,11 @@ void debug_ring_callback(uart_ring *ring) {
 }
 
 void smdps_clu11(void) {
-  CAN1->sTxMailBox[0].TDLR = 0x00;
-  CAN1->sTxMailBox[0].TDTR = 4;
-  CAN1->sTxMailBox[0].TIR = (0x2AAU << 21) | 1U;
+  CAN_FIFOMailBox_TypeDef to_send;
+  to_send.RDLR = 0x00;
+  to_send.RDTR = 4;
+  to_send.RIR = (0x2AA << 21) | 1U;
+  can_send(&to_send, 0, false);
 }
 
 // ****************************** safety mode ******************************
