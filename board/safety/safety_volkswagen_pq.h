@@ -19,6 +19,9 @@ const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
   .min_accel = -3500,
   .inactive_accel = 3010,  // VW sends one increment above the max range when inactive
 };
+const int VOLKSWAGEN_GAS_INTERCEPTOR_THRSLD = 475;
+#define VOLKSWAGEN_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U) // avg between 2 tracks
+
 
 #define MSG_LENKHILFE_3         0x0D0   // RX from EPS, for steering angle and driver steering torque
 #define MSG_HCA_1               0x0D2   // TX by OP, Heading Control Assist steering torque
@@ -30,12 +33,14 @@ const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
 #define MSG_MOTOR_5             0x480   // RX from ECU, for ACC main switch state
 #define MSG_ACC_GRA_ANZEIGE     0x56A   // TX by OP, ACC HUD
 #define MSG_LDW_1               0x5BE   // TX by OP, Lane line recognition and text alerts
+#define MSG_GAS_1		            0x200   // TX by OP, Gas Control
+#define MSG_GAS_SENSOR		      0x201   // RX by OP, GAS Sensor
 
 // Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
 const CanMsg VOLKSWAGEN_PQ_STOCK_TX_MSGS[] = {{MSG_HCA_1, 0, 5}, {MSG_LDW_1, 0, 8},
                                               {MSG_GRA_NEU, 0, 4}, {MSG_GRA_NEU, 2, 4}};
 const CanMsg VOLKSWAGEN_PQ_LONG_TX_MSGS[] =  {{MSG_HCA_1, 0, 5}, {MSG_LDW_1, 0, 8},
-                                              {MSG_ACC_SYSTEM, 0, 8}, {MSG_ACC_GRA_ANZEIGE, 0, 8}};
+                                              {MSG_ACC_SYSTEM, 0, 8}, {MSG_ACC_GRA_ANZEIGE, 0, 8}, {MSG_GAS_1, 0, 6}};
 
 RxCheck volkswagen_pq_rx_checks[] = {
   {.msg = {{MSG_LENKHILFE_3, 0, 6, .check_checksum = true, .max_counter = 15U, .frequency = 100U}, { 0 }, { 0 }}},
@@ -44,7 +49,12 @@ RxCheck volkswagen_pq_rx_checks[] = {
   {.msg = {{MSG_MOTOR_3, 0, 8, .check_checksum = false, .max_counter = 0U, .frequency = 100U}, { 0 }, { 0 }}},
   {.msg = {{MSG_MOTOR_5, 0, 8, .check_checksum = true, .max_counter = 0U, .frequency = 50U}, { 0 }, { 0 }}},
   {.msg = {{MSG_GRA_NEU, 0, 4, .check_checksum = true, .max_counter = 15U, .frequency = 30U}, { 0 }, { 0 }}},
+  {.msg = {{MSG_GAS_SENSOR, 0, 6, .check_checksum = false, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
 };
+
+bool longitudinal_interceptor_checks(const CANPacket_t *to_send) {
+  return !get_longitudinal_allowed() && (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1));
+}
 
 static uint32_t volkswagen_pq_get_checksum(const CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
@@ -60,6 +70,8 @@ static uint8_t volkswagen_pq_get_counter(const CANPacket_t *to_push) {
     counter = (uint8_t)(GET_BYTE(to_push, 1) & 0xF0U) >> 4;
   } else if (addr == MSG_GRA_NEU) {
     counter = (uint8_t)(GET_BYTE(to_push, 2) & 0xF0U) >> 4;
+  } else if (addr == MSG_GAS_SENSOR) {
+    counter = GET_BYTE(to_push, 4) & 0x0FU;
   } else {
   }
 
@@ -89,6 +101,7 @@ static safety_config volkswagen_pq_init(uint16_t param) {
   volkswagen_resume_button_prev = false;
 
 #ifdef ALLOW_DEBUG
+  enable_gas_interceptor = GET_FLAG(param, FLAG_VW_GAS_INTERCEPTOR);
   volkswagen_longitudinal = GET_FLAG(param, FLAG_VOLKSWAGEN_LONG_CONTROL);
 #endif
   return volkswagen_longitudinal ? BUILD_SAFETY_CFG(volkswagen_pq_rx_checks, VOLKSWAGEN_PQ_LONG_TX_MSGS) : \
@@ -154,9 +167,15 @@ static void volkswagen_pq_rx_hook(const CANPacket_t *to_push) {
         pcm_cruise_check(cruise_engaged);
       }
     }
-
+    // Signal: GAS_INTERCEPT_SENSOR
+    if (((addr == MSG_GAS_SENSOR) && enable_gas_interceptor)) {
+     
+      int gas_interceptor = VOLKSWAGEN_GET_INTERCEPTOR(to_push);
+      gas_pressed = gas_interceptor > VOLKSWAGEN_GAS_INTERCEPTOR_THRSLD;
+      gas_interceptor_prev = gas_interceptor;
+    }
     // Signal: Motor_3.Fahrpedal_Rohsignal
-    if (addr == MSG_MOTOR_3) {
+    if ((addr == MSG_MOTOR_3)&& !enable_gas_interceptor) {
       gas_pressed = (GET_BYTE(to_push, 2));
     }
 
@@ -202,7 +221,12 @@ static bool volkswagen_pq_tx_hook(const CANPacket_t *to_send) {
       tx = false;
     }
   }
-
+  // GAS: safety check (interceptor)
+  if (addr == MSG_GAS_1) {
+    if (longitudinal_interceptor_checks(to_send)) {
+      tx = false;
+    }
+  }
   // FORCE CANCEL: ensuring that only the cancel button press is sent when controls are off.
   // This avoids unintended engagements while still allowing resume spam
   if ((addr == MSG_GRA_NEU) && !controls_allowed) {
