@@ -34,7 +34,7 @@ RxCheck tesla_model3_y_rx_checks[] = {
   {.msg = {{0x286, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // DI_state (acc state)
   {.msg = {{0x311, 0, 7, .frequency = 10U}, { 0 }, { 0 }}},   // UI_warning (buckle switch & doors)
   {.msg = {{0x3f5, 1, 8, .frequency = 10U}, { 0 }, { 0 }}},   // ID3F5VCFRONT_lighting (blinkers)
-  {.msg = {{0x229, 1, 3, .frequency = 10U}, { 0 }, { 0 }}},   // SCCM_rightStalk (right control lever)
+  {.msg = {{0x3c2, 1, 8, .frequency = 20U}, { 0 }, { 0 }}},   // VCLEFT_switchStatus
 };
 
 bool tesla_longitudinal = false;
@@ -82,10 +82,14 @@ static void tesla_rx_hook(const CANPacket_t *to_push) {
   }
 
   if (bus == 1) {
-    if (addr == 0x229) {
-      int sccm_right_stalk = (GET_BYTE(to_push, 1) >> 4) & 0x7U;
-      bool mads_enabled = sccm_right_stalk == 3;
-      mads_lkas_button_check(mads_enabled);
+    if (addr == 0x3c2) {
+      int mux = GET_BYTE(to_push, 0) & 0x03U;
+      if (mux == 1) {
+        // TODO: check for double-click only to match actual activation
+        int swc_right_pressed = ((GET_BYTE(to_push, 1) & 0x30U) >> 4);
+        bool mads_enabled = swc_right_pressed == 2;
+        mads_lkas_button_check(mads_enabled);
+      }
     }
   }
 
@@ -132,6 +136,7 @@ static bool tesla_tx_hook(const CANPacket_t *to_send) {
 
   if(addr == 0x2b9) {
     // DAS_control: longitudinal control message
+    int acc_state = ((GET_BYTE(to_send, 1) & 0xF0U) >> 4);
     if (tesla_longitudinal) {
       // No AEB events may be sent by openpilot
       int aeb_event = GET_BYTE(to_send, 2) & 0x03U;
@@ -149,6 +154,14 @@ static bool tesla_tx_hook(const CANPacket_t *to_send) {
       int raw_accel_min = ((GET_BYTE(to_send, 5) & 0x0FU) << 5) | (GET_BYTE(to_send, 4) >> 3);
       violation |= longitudinal_accel_checks(raw_accel_max, TESLA_LONG_LIMITS);
       violation |= longitudinal_accel_checks(raw_accel_min, TESLA_LONG_LIMITS);
+    } else if(acc_state == 13) {
+      // Allow sending of acc_state 13 to cancel TACC by OP
+
+      // Don't send messages when the stock AEB system is active
+      if (tesla_stock_aeb) {
+        violation = true;
+      }
+
     } else {
       violation = true;
     }
