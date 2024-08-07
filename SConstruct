@@ -16,6 +16,10 @@ AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
 
+AddOption('--escc',
+          action='store_true',
+          help='build escc firmware')
+
 env = Environment(
   COMPILATIONDB_USE_ABSPATH=True,
   tools=["default", "compilation_db"],

@@ -9,6 +9,7 @@
 //#define DEBUG_FAULTS
 //#define DEBUG_COMMS
 //#define DEBUG_FAN
+//#define DEBUG_CAN_LOOP
 
 #define CAN_INIT_TIMEOUT_MS 500U
 #define USBPACKET_MAX_SIZE 0x40U

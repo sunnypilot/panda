@@ -124,6 +124,61 @@ bool is_car_safety_mode(uint16_t mode) {
          (mode != SAFETY_ELM327);
 }
 
+#ifdef ESCC
+// ***************************** ESCC code *****************************
+bool is_car_safety_mode_escc(uint16_t mode) {
+  return is_car_safety_mode(mode) && (mode != SAFETY_HYUNDAI_ESCC);
+}
+#define is_car_safety_mode is_car_safety_mode_escc
+
+#define CAN_ESCC_INPUT  0x2AC
+#define CAN_ESCC_OUTPUT 0x2ABU
+
+void send_escc_msg(const ESCC_Msg *msg, const int bus_number) {
+#ifdef DEBUG
+
+  print("send_escc_msg\n");
+  print("fca_cmd_act: "); putui(msg->fca_cmd_act); print("\n");
+  print("aeb_cmd_act: "); putui(msg->aeb_cmd_act); print("\n");
+  print("cf_vsm_warn_fca11: "); putui(msg->cf_vsm_warn_fca11); print("\n");
+  print("cf_vsm_warn_scc12: "); putui(msg->cf_vsm_warn_scc12); print("\n");
+  print("cf_vsm_deccmdact_scc12: "); putui(msg->cf_vsm_deccmdact_scc12); print("\n");
+  print("cf_vsm_deccmdact_fca11: "); putui(msg->cf_vsm_deccmdact_fca11); print("\n");
+  print("cr_vsm_deccmd_scc12: "); putui(msg->cr_vsm_deccmd_scc12); print("\n");
+  print("cr_vsm_deccmd_fca11: "); putui(msg->cr_vsm_deccmd_fca11); print("\n");
+  print("obj_valid: "); putui(msg->obj_valid); print("\n");
+  print("acc_objstatus: "); putui(msg->acc_objstatus); print("\n");
+  print("acc_obj_lat_pos_1: "); putui(msg->acc_obj_lat_pos_1); print("\n");
+  print("acc_obj_lat_pos_2: "); putui(msg->acc_obj_lat_pos_2); print("\n");
+  print("acc_obj_dist_1: "); putui(msg->acc_obj_dist_1); print("\n");
+  print("acc_obj_dist_2: "); putui(msg->acc_obj_dist_2); print("\n");
+  print("acc_obj_rel_spd_1: "); putui(msg->acc_obj_rel_spd_1); print("\n");
+  print("acc_obj_rel_spd_2: "); putui(msg->acc_obj_rel_spd_2); print("\n");
+#endif
+
+  uint8_t dat[8];
+  dat[0] = (msg->fca_cmd_act) | (msg->cf_vsm_warn_fca11 << 1) | (msg->aeb_cmd_act << 3) | 
+           (msg->cf_vsm_warn_scc12 << 4) | (msg->cf_vsm_deccmdact_scc12 << 6) | (msg->cf_vsm_deccmdact_fca11 << 7);
+  dat[1] = (msg->cr_vsm_deccmd_scc12);
+  dat[2] = (msg->obj_valid) | (msg->acc_objstatus << 1);
+  dat[3] = (msg->acc_obj_lat_pos_1);
+  dat[4] = (msg->acc_obj_lat_pos_2) | (msg->acc_obj_dist_1 << 1);
+  dat[5] = (msg->acc_obj_dist_2) | (msg->acc_obj_rel_spd_1 << 4);
+  dat[6] = (msg->acc_obj_rel_spd_2);
+  dat[7] = (msg->cr_vsm_deccmd_fca11);
+
+  CANPacket_t to_send;
+  to_send.extended = CAN_ESCC_OUTPUT >= 0x800 ? 1 : 0;
+  to_send.addr = CAN_ESCC_OUTPUT;
+  to_send.bus = bus_number;
+  to_send.data_len_code = sizeof(dat);
+  memcpy(to_send.data, dat, sizeof(dat));
+  
+  can_set_checksum(&to_send);
+  can_send(&to_send, bus_number, true);
+}
+#endif
+
 // ***************************** main code *****************************
 
 // cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
@@ -181,7 +236,9 @@ void tick_handler(void) {
         print("rx:"); puth4(can_rx_q.r_ptr); print("-"); puth4(can_rx_q.w_ptr); print("  ");
         print("tx1:"); puth4(can_tx1_q.r_ptr); print("-"); puth4(can_tx1_q.w_ptr); print("  ");
         print("tx2:"); puth4(can_tx2_q.r_ptr); print("-"); puth4(can_tx2_q.w_ptr); print("  ");
-        print("tx3:"); puth4(can_tx3_q.r_ptr); print("-"); puth4(can_tx3_q.w_ptr); print("\n");
+        print("tx3:"); puth4(can_tx3_q.r_ptr); print("-"); puth4(can_tx3_q.w_ptr); print("  ");
+        print("SAFETY MODE:"); putui(current_safety_mode);
+        print("\n");
       #endif
 
       // set green LED to be controls allowed
@@ -230,6 +287,7 @@ void tick_handler(void) {
         heartbeat_engaged_mismatches = 0U;
       }
 
+#ifndef ESCC // Hearbet disabled when ESCC
       if (!heartbeat_disabled) {
         // if the heartbeat has been gone for a while, go to SILENT safety mode and enter power save
         if (heartbeat_counter >= (check_started() ? HEARTBEAT_IGNITION_CNT_ON : HEARTBEAT_IGNITION_CNT_OFF)) {
@@ -268,6 +326,7 @@ void tick_handler(void) {
           fan_set_power(enabled ? 50U : 0U);
         }
       }
+#endif
 
       // check registers
       check_registers();
@@ -329,8 +388,13 @@ int main(void) {
 
   microsecond_timer_init();
 
+#ifdef ESCC
+  // init to SAFETY_HYUNDAI_ESCC and can all output
+  set_safety_mode(SAFETY_HYUNDAI_ESCC, 1U);
+#else
   // init to SILENT and can silent
   set_safety_mode(SAFETY_SILENT, 0U);
+#endif
 
   // enable CAN TXs
   current_board->enable_can_transceivers(true);
@@ -361,7 +425,35 @@ int main(void) {
   enable_interrupts();
 
   // LED should keep on blinking all the time
+#if defined(ESCC) && defined(DEBUG_CAN_LOOP) 
+  ESCC_Msg escc;
+  escc.fca_cmd_act = 1;
+  escc.aeb_cmd_act = 1;
+  escc.cf_vsm_warn_fca11 = 1;
+  escc.cf_vsm_warn_scc12 = 1;
+  escc.cf_vsm_deccmdact_scc12 = 1;
+  escc.cf_vsm_deccmdact_fca11 = 1;
+  escc.cr_vsm_deccmd_scc12 = 1;
+  escc.cr_vsm_deccmd_fca11 = 1;
+  escc.obj_valid = 1;
+  escc.acc_objstatus = 1;
+  escc.acc_obj_lat_pos_1 = 1;
+  escc.acc_obj_lat_pos_2 = 1;
+  escc.acc_obj_dist_1 = 1;
+  escc.acc_obj_dist_2 = 1;
+  escc.acc_obj_rel_spd_1 = 1;
+  escc.acc_obj_rel_spd_2 = 1;
+  int i = 0;
+#endif
+  
   while (true) {
+
+#if defined(ESCC) && defined(DEBUG_CAN_LOOP)
+    send_escc_msg(&escc, i++);
+    if(i > 3)
+      i = 0;
+#endif
+    
     if (power_save_status == POWER_SAVE_STATUS_DISABLED) {
       #ifdef DEBUG_FAULTS
       if (fault_status == FAULT_STATUS_NONE) {

@@ -21,6 +21,10 @@
 #include "safety/safety_elm327.h"
 #include "safety/safety_body.h"
 
+#ifdef ESCC
+#include "safety/safety_hyundai_escc.h"
+#endif
+
 // CAN-FD only safety modes
 #ifdef CANFD
 #include "safety/safety_hyundai_canfd.h"
@@ -53,6 +57,10 @@
 #define SAFETY_FAW 26U
 #define SAFETY_BODY 27U
 #define SAFETY_HYUNDAI_CANFD 28U
+
+#ifdef ESCC
+#define SAFETY_HYUNDAI_ESCC 29U
+#endif
 
 uint16_t current_safety_mode = SAFETY_SILENT;
 uint16_t current_safety_param = 0;
@@ -318,6 +326,9 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_GM, &gm_hooks},
   {SAFETY_HONDA_BOSCH, &honda_bosch_hooks},
   {SAFETY_HYUNDAI, &hyundai_hooks},
+#ifdef ESCC
+  {SAFETY_HYUNDAI_ESCC, &hyundai_escc_hooks},
+#endif
   {SAFETY_CHRYSLER, &chrysler_hooks},
   {SAFETY_SUBARU, &subaru_hooks},
   {SAFETY_VOLKSWAGEN_MQB, &volkswagen_mqb_hooks},
