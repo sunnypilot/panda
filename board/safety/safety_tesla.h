@@ -35,6 +35,7 @@ RxCheck tesla_model3_y_rx_checks[] = {
   {.msg = {{0x311, 0, 7, .frequency = 10U}, { 0 }, { 0 }}},   // UI_warning (buckle switch & doors)
   {.msg = {{0x3f5, 1, 8, .frequency = 10U}, { 0 }, { 0 }}},   // ID3F5VCFRONT_lighting (blinkers)
   {.msg = {{0x3c2, 1, 8, .frequency = 20U}, { 0 }, { 0 }}},   // VCLEFT_switchStatus
+  {.msg = {{0x3df, 1, 6, .frequency = 2U}, { 0 }, { 0 }}},    // UI_status2 (Variable freq, min 2hz)
 };
 
 bool tesla_longitudinal = false;
@@ -82,14 +83,10 @@ static void tesla_rx_hook(const CANPacket_t *to_push) {
   }
 
   if (bus == 1) {
-    if (addr == 0x3c2) {
-      int mux = GET_BYTE(to_push, 0) & 0x03U;
-      if (mux == 1) {
-        // TODO: check for double-click only to match actual activation
-        int swc_right_pressed = ((GET_BYTE(to_push, 1) & 0x30U) >> 4);
-        bool mads_enabled = swc_right_pressed == 2;
-        mads_lkas_button_check(mads_enabled);
-      }
+    if (addr == 0x3df) {
+      int ui_active_touch_points = GET_BYTE(to_push, 3);
+      bool mads_enabled = ui_active_touch_points == 3U;
+      mads_lkas_button_check(mads_enabled);
     }
   }
 
