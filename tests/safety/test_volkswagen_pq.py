@@ -15,6 +15,8 @@ MSG_GRA_NEU = 0x38A           # TX by OP, ACC control buttons for cancel/resume
 MSG_MOTOR_5 = 0x480           # RX from ECU, for ACC main switch state
 MSG_ACC_GRA_ANZEIGE = 0x56A   # TX by OP, ACC HUD
 MSG_LDW_1 = 0x5BE             # TX by OP, Lane line recognition and text alerts
+MSG_GAS_1 = 0x200             # TX by OP, Gas Control
+MSG_GAS_SENSOR =  0x201       # RX by OP, GAS Sensor
 
 
 class TestVolkswagenPqSafety(common.PandaCarSafetyTest, common.DriverTorqueSteeringSafetyTest):
@@ -115,7 +117,30 @@ class TestVolkswagenPqSafety(common.PandaCarSafetyTest, common.DriverTorqueSteer
     self.assertEqual(0, self.safety.get_torque_driver_max())
     self.assertEqual(0, self.safety.get_torque_driver_min())
 
+class TestVolkswagenPqGasInterceptorBase(common.GasInterceptorSafetyTest, TestVolkswagenPqSafety):
 
+  TX_MSGS = [[MSG_GAS_1, 0], [MSG_GAS_SENSOR, 0]]
+  INTERCEPTOR_THRESHOLD = 475
+
+  def setUp(self):
+    super().setUp()
+    self.safety.set_safety_hooks(Panda.SAFETY_VOLKSWAGEN_PQ, self.safety.get_current_safety_param() |
+                                 Panda.FLAG_VW_GAS_INTERCEPTOR)
+    self.safety.init_tests()
+
+  def test_stock_longitudinal(self):
+    # If stock longitudinal is set, the gas interceptor safety param should not be respected
+    self.safety.set_safety_hooks(Panda.SAFETY_VOLKSWAGEN_PQ, self.safety.get_current_safety_param() |
+                                 Panda.FLAG_VOLKSWAGEN_LONG_CONTROL)
+    self.safety.init_tests()
+
+    # Spot check a few gas interceptor tests: (1) reading interceptor,
+    # (2) behavior around interceptor, and (3) txing interceptor msgs
+    for test in (self.test_prev_gas_interceptor, self.test_disengage_on_gas_interceptor,
+                 self.test_gas_interceptor_safety_check):
+      with self.subTest(test=test.__name__):
+        with self.assertRaises(AssertionError):
+          test()
 class TestVolkswagenPqStockSafety(TestVolkswagenPqSafety):
   # Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
   TX_MSGS = [[MSG_HCA_1, 0], [MSG_GRA_NEU, 0], [MSG_GRA_NEU, 2], [MSG_LDW_1, 0]]
@@ -137,7 +162,8 @@ class TestVolkswagenPqStockSafety(TestVolkswagenPqSafety):
     self.safety.set_controls_allowed(1)
     self.assertTrue(self._tx(self._button_msg(resume=True)))
 
-
+class TestVolkswagenPqStockSafetyGasInterceptor(TestVolkswagenPqGasInterceptorBase, TestVolkswagenPqStockSafety):
+  pass
 class TestVolkswagenPqLongSafety(TestVolkswagenPqSafety, common.LongitudinalAccelSafetyTest):
   TX_MSGS = [[MSG_HCA_1, 0], [MSG_LDW_1, 0], [MSG_ACC_SYSTEM, 0], [MSG_ACC_GRA_ANZEIGE, 0]]
   FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE]}
@@ -194,6 +220,9 @@ class TestVolkswagenPqLongSafety(TestVolkswagenPqSafety, common.LongitudinalAcce
     for enabled_status in (5, 7):
       self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_RATE_UP, steer_req=1, hca_status=enabled_status)),
                       f"torque cmd rejected with {enabled_status=}")
+
+class  TestVolkswagenPqLongSafetyGasInterceptor(TestVolkswagenPqGasInterceptorBase,  TestVolkswagenPqLongSafety):
+  pass
 
 if __name__ == "__main__":
   unittest.main()
