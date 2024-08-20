@@ -40,6 +40,7 @@ typedef struct {
   const int CRUISE_BUTTONS;
   const int CENTER_STACK_1;
   const int CENTER_STACK_2;
+  const int CRUISE_BUTTONS_ALT;
 } ChryslerAddrs;
 
 // CAN messages for Chrysler/Jeep platforms
@@ -81,6 +82,7 @@ const ChryslerAddrs CHRYSLER_RAM_HD_ADDRS = {
   .DAS_6            = 0x275,  // LKAS HUD and auto headlight control from DASM
   .LKAS_COMMAND     = 0x276,  // LKAS controls from DASM
   .CRUISE_BUTTONS   = 0x23A,  // Cruise control buttons
+  .CRUISE_BUTTONS_ALT = 0xB1, // Cruise control buttons for Ram HD
   .CENTER_STACK_1   = 0x330,  // LKAS Button
   .CENTER_STACK_2   = 0x28A,  // LKAS Button
 };
@@ -102,6 +104,7 @@ const CanMsg CHRYSLER_RAM_HD_TX_MSGS[] = {
   {CHRYSLER_RAM_HD_ADDRS.CRUISE_BUTTONS, 2, 3},
   {CHRYSLER_RAM_HD_ADDRS.LKAS_COMMAND, 0, 8},
   {CHRYSLER_RAM_HD_ADDRS.DAS_6, 0, 8},
+  {CHRYSLER_RAM_HD_ADDRS.CRUISE_BUTTONS_ALT, 2, 3},
 };
 
 RxCheck chrysler_rx_checks[] = {
@@ -248,7 +251,7 @@ static bool chrysler_tx_hook(const CANPacket_t *to_send) {
   }
 
   // FORCE CANCEL: only the cancel button press is allowed
-  if ((addr == chrysler_addrs->CRUISE_BUTTONS) && (chrysler_platform == CHRYSLER_PACIFICA)) {
+  if (((addr == chrysler_addrs->CRUISE_BUTTONS) || (addr == CHRYSLER_RAM_HD_ADDRS.CRUISE_BUTTONS_ALT)) && (chrysler_platform == CHRYSLER_PACIFICA)) {
     const bool is_cancel = GET_BYTE(to_send, 0) == 1U;
     const bool is_resume = GET_BYTE(to_send, 0) == 0x10U;
     const bool is_accel = GET_BIT(to_send, 2);
