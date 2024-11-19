@@ -41,10 +41,7 @@ static const CanMsg HYUNDAI_TX_MSGS[] = {
 #define HYUNDAI_SCC12_ADDR_CHECK(scc_bus)                                                                                  \
   {.msg = {{0x421, (scc_bus), 8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}}, \
 
-const int HYUNDAI_PARAM_ESCC = 512;
-
 static bool hyundai_legacy = false;
-static bool hyundai_escc = false;
 
 static uint8_t hyundai_get_counter(const CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
@@ -285,7 +282,6 @@ static safety_config hyundai_init(uint16_t param) {
 
   hyundai_common_init(param);
   hyundai_legacy = false;
-  hyundai_escc = GET_FLAG(param, HYUNDAI_PARAM_ESCC);
 
   if (hyundai_camera_scc) {
     hyundai_longitudinal = false;
@@ -329,7 +325,6 @@ static safety_config hyundai_legacy_init(uint16_t param) {
   hyundai_legacy = true;
   hyundai_longitudinal = false;
   hyundai_camera_scc = false;
-  hyundai_escc = GET_FLAG(param, HYUNDAI_PARAM_ESCC);
   return BUILD_SAFETY_CFG(hyundai_legacy_rx_checks, HYUNDAI_TX_MSGS);
 }
 
