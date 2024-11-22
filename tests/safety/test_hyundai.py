@@ -212,5 +212,30 @@ class TestHyundaiLongitudinalSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
     self.assertFalse(self._tx(self._accel_msg(0, aeb_decel=1.0)))
 
 
+class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
+  TX_MSGS = [[0x340, 0], [0x4F1, 0], [0x485, 0], [0x420, 0], [0x421, 0], [0x50A, 0], [0x389, 0]]
+
+  RELAY_MALFUNCTION_ADDRS = {0: (0x340, 0x421)}  # LKAS11, SCC12
+
+  def setUp(self):
+    self.packer = CANPackerPanda("hyundai_kia_generic")
+    self.safety = libpanda_py.libpanda
+    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, Panda.FLAG_HYUNDAI_LONG | Panda.FLAG_HYUNDAI_ESCC)
+    self.safety.init_tests()
+
+  def _accel_msg(self, accel, aeb_req=False, aeb_decel=0):
+    values = {
+      "aReqRaw": accel,
+      "aReqValue": accel,
+    }
+    return self.packer.make_can_msg_panda("SCC12", self.SCC_BUS, values)
+
+  def test_tester_present_allowed(self):
+    pass
+
+  def test_disabled_ecu_alive(self):
+    pass
+
+
 if __name__ == "__main__":
   unittest.main()
