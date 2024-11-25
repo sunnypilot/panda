@@ -138,7 +138,7 @@ uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
   return crc;
 }
 
-void hyundai_common_reset_acc_main(const int acc_main_on_tx) {
+void hyundai_common_reset_acc_main(const bool acc_main_on_tx) {
   if (acc_main_on && !acc_main_on_tx) {
     acc_main_on_mismatches += 1U;
     if (acc_main_on_mismatches >= 25U) {
