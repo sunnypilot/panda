@@ -431,6 +431,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   reset_sample(&angle_meas);
 
   controls_allowed = false;
+  controls_allowed_lat = false;
   relay_malfunction_reset();
   safety_rx_checks_invalid = false;
 
