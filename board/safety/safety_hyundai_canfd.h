@@ -113,6 +113,8 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
     }
   }
 
+  mads_check_acc_main();
+
   const int steer_addr = hyundai_canfd_hda2 ? hyundai_canfd_hda2_get_lkas_addr() : 0x12a;
   bool stock_ecu_detected = (addr == steer_addr) && (bus == 0);
   if (hyundai_longitudinal) {
@@ -122,8 +124,6 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
     stock_ecu_detected = stock_ecu_detected || ((addr == 0x1a0) && (bus == stock_scc_bus));
   }
   generic_rx_checks(stock_ecu_detected);
-
-  mads_check_acc_main();
 
   if (acc_main_on && !acc_main_on_prev) {
     acc_main_on_mismatches = 0;
