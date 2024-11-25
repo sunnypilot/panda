@@ -74,6 +74,7 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
         main_button = GET_BIT(to_push, 34U);
         lkas_button = GET_BIT(to_push, 39U);
       }
+      mads_check_lkas_button();
       hyundai_common_cruise_buttons_check(cruise_button, main_button);
     }
 
