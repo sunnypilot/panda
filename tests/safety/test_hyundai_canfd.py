@@ -83,13 +83,12 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
     values = {"MainMode_ACC": enable}
     return self.packer.make_can_msg_panda("SCC_CONTROL", self.SCC_BUS, values)
 
-  def _lkas_button_msg(self, bus=None):
-    if bus is None:
-      bus = self.PT_BUS
-    values = {
-      "LKAS_BTN": 1,
-    }
-    return self.packer.make_can_msg_panda("CRUISE_BUTTONS", bus, values)
+  def test_lkas_button(self):
+    for enable_mads in (True, False):
+      self.safety.set_enable_mads(enable_mads)
+      self.safety.set_controls_allowed_lat(False)
+      self._rx(self._button_msg(0, lkas_button=1))
+      self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
 
 
 class TestHyundaiCanfdHDA1Base(TestHyundaiCanfdBase):
@@ -168,12 +167,6 @@ class TestHyundaiCanfdHDA1AltButtons(TestHyundaiCanfdHDA1Base):
       for btn in range(8):
         self.safety.set_controls_allowed(enabled)
         self.assertFalse(self._tx(self._button_msg(btn)))
-
-  def _lkas_button_msg(self, bus=1):
-    values = {
-      "LFA_BTN": 1,
-    }
-    return self.packer.make_can_msg_panda("CRUISE_BUTTONS_ALT", self.PT_BUS, values)
 
 
 class TestHyundaiCanfdHDA2EV(TestHyundaiCanfdBase):

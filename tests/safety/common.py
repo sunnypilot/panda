@@ -830,6 +830,7 @@ class PandaSafetyTest(PandaSafetyTestBase):
       for addr, bus, test_name in tx_msgs:
         msg = make_msg(bus, addr)
         self.safety.set_controls_allowed(1)
+        self.safety.set_controls_allowed_lat(1)
         # TODO: this should be blocked
         if current_test in ["TestNissanSafety", "TestNissanSafetyAltEpsBus", "TestNissanLeafSafety"] and [addr, bus] in self.TX_MSGS:
           continue
