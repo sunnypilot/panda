@@ -207,23 +207,6 @@ extern bool acc_main_on; // referred to as "ACC off" in ISO 15622:2018
 extern int cruise_button_prev;
 extern bool safety_rx_checks_invalid;
 
-// mads
-void mads_set_state(bool state);
-void mads_check_acc_main(void);
-void mads_check_lkas_button(void);
-void mads_exit_controls(void);
-void mads_resume_controls(void);
-void check_braking_condition(bool state, bool state_prev);
-
-extern bool enable_mads;
-extern bool disengage_lateral_on_brake;
-extern bool disengaged_from_brakes;
-extern bool controls_allowed_lat;
-extern bool lkas_button;
-extern bool acc_main_on_prev;
-extern bool main_button_prev;
-extern uint32_t acc_main_on_mismatches;
-
 // for safety modes with torque steering control
 extern int desired_torque_last;       // last desired steer torque
 extern int rt_torque_last;            // last desired torque for real time check
@@ -260,16 +243,6 @@ extern struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
 // This flag allows AEB to be commanded from openpilot.
 #define ALT_EXP_ALLOW_AEB 16
-
-// Enable the ability to enable sunnypilot Automatic Lane Centering and ACC/SCC independently of each other. This
-// will enable MADS and allow other features to be used.
-// Enable the ability to re-engage sunnypilot Automatic Lane Centering only (NOT ACC/SCC) on brake release while MADS
-// is enabled.
-#define ALT_EXP_ENABLE_MADS 1024
-
-// Enable the ability to disable disengaging lateral control on brake press while MADS is enabled.
-// The feature must be gated behind this flag per geohot's comment on the comma community Discord server.
-#define ALT_EXP_DISABLE_DISENGAGE_LATERAL_ON_BRAKE 2048
 
 extern int alternative_experience;
 

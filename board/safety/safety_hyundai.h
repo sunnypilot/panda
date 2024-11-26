@@ -210,7 +210,7 @@ static bool hyundai_tx_hook(const CANPacket_t *to_send) {
 
   if (addr == 0x420) {
     bool acc_main_on_tx = GET_BIT(to_send, 0U);
-    hyundai_common_reset_acc_main(acc_main_on_tx);
+    reset_acc_main(acc_main_on_tx);
   }
 
   // ACCEL: safety check
