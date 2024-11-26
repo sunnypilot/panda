@@ -1,5 +1,4 @@
 #pragma once
-#include <safety.h>
 
 void mads_set_state(bool state) {
   controls_allowed_lat = state;
