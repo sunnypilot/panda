@@ -31,7 +31,6 @@ uint32_t acc_main_on_mismatches = 0;
 #define ALT_EXP_ENABLE_MADS 1024
 
 // Enable the ability to disable disengaging lateral control on brake press while MADS is enabled.
-// The feature must be gated behind this flag per geohot's comment on the comma community Discord server.
 #define ALT_EXP_DISABLE_DISENGAGE_LATERAL_ON_BRAKE 2048
 
 void mads_set_state(bool state) {
