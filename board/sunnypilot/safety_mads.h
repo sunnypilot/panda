@@ -1,12 +1,5 @@
 #pragma once
 
-void mads_set_state(bool state);
-void mads_check_acc_main(void);
-void mads_check_lkas_button(void);
-void mads_exit_controls(void);
-void mads_resume_controls(void);
-void check_braking_condition(bool state, bool state_prev);
-
 extern bool enable_mads;
 bool enable_mads = false;
 
