@@ -199,6 +199,7 @@ static void ford_rx_hook(const CANPacket_t *to_push) {
     generic_rx_checks(stock_ecu_detected);
   }
 
+  mads_check_lkas_main();
 }
 
 static bool ford_tx_hook(const CANPacket_t *to_send) {

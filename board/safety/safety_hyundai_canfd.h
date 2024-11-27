@@ -69,12 +69,13 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
         cruise_button = GET_BYTE(to_push, 2) & 0x7U;
         main_button = GET_BIT(to_push, 19U);
         lkas_button = GET_BIT(to_push, 23U);
+        mads_check_lkas_button();
       } else {
         cruise_button = (GET_BYTE(to_push, 4) >> 4) & 0x7U;
         main_button = GET_BIT(to_push, 34U);
         lkas_button = GET_BIT(to_push, 39U);
+        mads_check_lkas_button();
       }
-      mads_check_lkas_button();
       hyundai_common_cruise_buttons_check(cruise_button, main_button);
     }
 
@@ -108,12 +109,11 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
       int cruise_status = ((GET_BYTE(to_push, 8) >> 4) & 0x7U);
       bool cruise_engaged = (cruise_status == 1) || (cruise_status == 2);
       hyundai_common_cruise_state_check(cruise_engaged);
-
-      acc_main_on = GET_BIT(to_push, 66U);
+      bool temp_bool_engage_mads_from_scc_control_msg = true;
+      bool main_mode = GET_BIT(to_push, 66U);
+      lkas_main_on = temp_bool_engage_mads_from_scc_control_msg && main_mode;
     }
   }
-
-  mads_check_acc_main();
 
   const int steer_addr = hyundai_canfd_hda2 ? hyundai_canfd_hda2_get_lkas_addr() : 0x12a;
   bool stock_ecu_detected = (addr == steer_addr) && (bus == 0);
@@ -124,10 +124,7 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
     stock_ecu_detected = stock_ecu_detected || ((addr == 0x1a0) && (bus == stock_scc_bus));
   }
   generic_rx_checks(stock_ecu_detected);
-
-  if (acc_main_on && !acc_main_on_prev) {
-    acc_main_on_mismatches = 0;
-  }
+  mads_check_lkas_main();
 }
 
 static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
@@ -202,9 +199,6 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
     if (violation) {
       tx = false;
     }
-
-    bool acc_main_on_tx = GET_BIT(to_send, 66U);
-    reset_acc_main(acc_main_on_tx);
   }
 
   return tx;

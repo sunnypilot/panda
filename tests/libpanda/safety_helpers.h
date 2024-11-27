@@ -193,6 +193,18 @@ void set_enable_mads(bool c){
   enable_mads = c;
 }
 
+bool get_enable_mads(void){
+    return enable_mads;
+}
+
+bool get_hyundai_longitudinal(void){
+    return hyundai_longitudinal;
+}
+
+bool get_lkas_main_on(void){
+    return lkas_main_on;
+}
+
 void init_tests(void){
   // get HW_TYPE from env variable set in test.sh
   if (getenv("HW_TYPE")) {

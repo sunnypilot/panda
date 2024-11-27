@@ -8,6 +8,7 @@ import panda.tests.safety.common as common
 from panda import Panda
 from panda.tests.libpanda import libpanda_py
 from panda.tests.safety.common import CANPackerPanda
+from panda.tests.safety.mads_common import MadsCommonBase
 
 MSG_EngBrakeData = 0x165           # RX from PCM, for driver brake pedal and cruise state
 MSG_EngVehicleSpThrottle = 0x204   # RX from PCM, for driver throttle input
@@ -65,7 +66,7 @@ class Buttons:
 #  * CAN FD with stock longitudinal
 #  * CAN FD with openpilot longitudinal
 
-class TestFordSafetyBase(common.PandaCarSafetyTest):
+class TestFordSafetyBase(common.PandaCarSafetyTest, MadsCommonBase):
   STANDSTILL_THRESHOLD = 1
   RELAY_MALFUNCTION_ADDRS = {0: (MSG_ACCDATA_3, MSG_Lane_Assist_Data1, MSG_LateralMotionControl,
                                  MSG_LateralMotionControl2, MSG_IPMA_Data)}
@@ -197,6 +198,31 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
       "TjaButtnOnOffPress": 1 if button == Buttons.TJA_TOGGLE else 0,
     }
     return self.packer.make_can_msg_panda("Steering_Data_FD1", bus, values)
+
+  def _acc_state_msg(self, state):
+    brake = self.safety.get_brake_pressed_prev()
+    values = {
+      "BpedDrvAppl_D_Actl": 2 if brake else 1,
+      "CcStat_D_Actl": state,
+    }
+    return self.packer.make_can_msg_panda("EngBrakeData", 0, values)
+
+  def _lkas_button_msg(self, enabled):
+    values = {
+      "TjaButtnOnOffPress": enabled,
+    }
+    return self.packer.make_can_msg_panda("Steering_Data_FD1", 0, values)
+
+  def _mads_engage_msg(self, enabled):
+    return self._lkas_button_msg(enabled)
+
+  def test_enable_control_from_main(self):
+    for controls_allowed in (True, False):
+      for state in range(6):
+        self.safety.set_controls_allowed(controls_allowed)
+        self._rx(self._acc_state_msg(state))
+        allowed = (state == 3 or state == 4 or state == 5)
+        self.assertEqual(allowed, self.safety.get_acc_main_on())
 
   def test_rx_hook(self):
     # checksum, counter, and quality flag checks

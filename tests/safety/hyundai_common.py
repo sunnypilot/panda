@@ -1,8 +1,10 @@
 import unittest
+from abc import abstractmethod
 
 import panda.tests.safety.common as common
 from panda.tests.libpanda import libpanda_py
 from panda.tests.safety.common import make_msg
+from panda.tests.safety.mads_common import MadsCommonBase
 
 
 class Buttons:
@@ -16,7 +18,7 @@ PREV_BUTTON_SAMPLES = 8
 ENABLE_BUTTONS = (Buttons.RESUME, Buttons.SET, Buttons.CANCEL)
 
 
-class HyundaiButtonBase:
+class HyundaiButtonBase(MadsCommonBase):
   # pylint: disable=no-member,abstract-method
   BUTTONS_TX_BUS = 0  # tx on this bus, rx on 0
   SCC_BUS = 0  # rx on this bus
@@ -72,6 +74,10 @@ class HyundaiButtonBase:
       self.assertEqual(controls_allowed, self.safety.get_controls_allowed())
       self._rx(self._button_msg(Buttons.NONE))
 
+  @abstractmethod
+  def _button_msg(self, buttons, main_button=0, bus=0):
+    raise NotImplementedError
+
 
 class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
   # pylint: disable=no-member,abstract-method
@@ -84,6 +90,10 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
     if cls.__name__ == "HyundaiLongitudinalBase":
       cls.safety = None
       raise unittest.SkipTest
+
+  # Make sure we make it not implemented by default for long base because we need to use a different button
+  def _mads_engage_msg(self, enabled):
+    raise NotImplementedError
 
   # override these tests from PandaCarSafetyTest, hyundai longitudinal uses button enable
   def test_disable_control_allowed_from_cruise(self):

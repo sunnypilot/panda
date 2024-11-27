@@ -64,15 +64,15 @@ static bool toyota_get_quality_flag_valid(const CANPacket_t *to_push) {
 static void toyota_rx_hook(const CANPacket_t *to_push) {
   const int TOYOTA_LTA_MAX_ANGLE = 1657;  // EPS only accepts up to 94.9461
 
-  if (GET_BUS(to_push) == 2U) {
-    int addr = GET_ADDR(to_push);
-
-    if (addr == 0x412) {
-      uint8_t lkas_hud = GET_BYTE(to_push, 0U) & 0xC0U;
-      lkas_button = lkas_hud > 0U;
-      mads_check_lkas_button();
-    }
-  }
+  // if (GET_BUS(to_push) == 2U) {
+  //   int addr = GET_ADDR(to_push);
+  //
+  //   if (addr == 0x412) {
+  //     uint8_t lkas_hud = GET_BYTE(to_push, 0U) & 0xC0U;
+  //     lkas_button = lkas_hud > 0U;
+  //     mads_check_lkas_button();
+  //   }
+  // }
 
   if (GET_BUS(to_push) == 0U) {
     int addr = GET_ADDR(to_push);
@@ -149,10 +149,10 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
       UPDATE_VEHICLE_SPEED(speed / 4.0 * 0.01 / 3.6);
     }
 
-    if (addr == 0x1D3) {
-      acc_main_on = GET_BIT(to_push, 15U);
-      mads_check_acc_main();
-    }
+    // if (addr == 0x1D3) {
+    //   acc_main_on = GET_BIT(to_push, 15U);
+    //   mads_check_acc_main();
+    // }
 
     bool stock_ecu_detected = addr == 0x2E4;  // STEERING_LKA
     if (!toyota_stock_longitudinal && (addr == 0x343)) {
@@ -160,6 +160,7 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
     }
     generic_rx_checks(stock_ecu_detected);
   }
+  // mads_check_acc_main();
 }
 
 static bool toyota_tx_hook(const CANPacket_t *to_send) {
