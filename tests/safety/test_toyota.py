@@ -8,6 +8,7 @@ from panda import Panda
 from panda.tests.libpanda import libpanda_py
 import panda.tests.safety.common as common
 from panda.tests.safety.common import CANPackerPanda
+from panda.tests.safety.mads_common import MadsCommonBase
 
 TOYOTA_COMMON_TX_MSGS = [[0x2E4, 0], [0x191, 0], [0x412, 0], [0x343, 0], [0x1D2, 0]]  # LKAS + LTA + ACC & PCM cancel cmds
 TOYOTA_SECOC_TX_MSGS = [[0x131, 0]] + TOYOTA_COMMON_TX_MSGS
@@ -17,7 +18,7 @@ TOYOTA_COMMON_LONG_TX_MSGS = [[0x283, 0], [0x2E6, 0], [0x2E7, 0], [0x33E, 0], [0
                               [0x750, 0]]  # radar diagnostic address
 
 
-class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSafetyTest):
+class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSafetyTest, MadsCommonBase):
 
   TX_MSGS = TOYOTA_COMMON_TX_MSGS + TOYOTA_COMMON_LONG_TX_MSGS
   STANDSTILL_THRESHOLD = 0  # kph
@@ -126,6 +127,22 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
       to_push[0].data[7] = 0
       self.assertFalse(self._rx(to_push))
       self.assertFalse(self.safety.get_controls_allowed())
+
+  def _lkas_button_msg(self, enabled):
+    values = {"LKAS_STATUS": enabled}
+    return self.packer.make_can_msg_panda("LKAS_HUD", 2, values)
+
+  def _acc_state_msg(self, enable):
+    values = {"MAIN_ON": enable}
+    return self.packer.make_can_msg_panda("PCM_CRUISE_2", 0, values)
+
+  def _mads_engage_msg(self, enabled):
+    return self._lkas_button_msg(enabled)
+
+  def test_mads_engagement_when_acc_msg(self):
+    self.safety.set_enable_mads(True)
+    self._test_lat_enabled_when_msg(self._acc_state_msg(True), True)
+    self.safety.set_enable_mads(False)
 
 
 class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):

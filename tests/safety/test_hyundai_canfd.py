@@ -82,12 +82,13 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
     values = {"MainMode_ACC": enable}
     return self.packer.make_can_msg_panda("SCC_CONTROL", self.SCC_BUS, values)
 
-  def _mads_engage_msg(self, enabled):
-    return self._acc_state_msg(enabled)
-
   def _lkas_button_msg(self, enabled):
     values = {"LKAS_BTN": enabled}
     return self.packer.make_can_msg_panda("CRUISE_BUTTONS", self.PT_BUS, values)
+
+  #TODO-SP: Is this true?
+  def _test_enable_lateral_control_via_acc_state(self, mads_enabled, valid_mads_engage, expected_enabled):
+    raise unittest.SkipTest("HDA platforms have LFA buttons, so we don't use ACC state for lateral control.")
 
 
 class TestHyundaiCanfdHDA1Base(TestHyundaiCanfdBase):
@@ -157,8 +158,8 @@ class TestHyundaiCanfdHDA1AltButtons(TestHyundaiCanfdHDA1Base):
     }
     return self.packer.make_can_msg_panda("CRUISE_BUTTONS_ALT", self.PT_BUS, values)
 
-  def _lkas_button_msg(self):
-    values = {"LFA_BTN": 1}
+  def _lkas_button_msg(self, enabled):
+    values = {"LFA_BTN": enabled}
     return self.packer.make_can_msg_panda("CRUISE_BUTTONS_ALT", self.PT_BUS, values)
 
   def test_button_sends(self):
@@ -238,10 +239,6 @@ class TestHyundaiCanfdHDA2LongEV(HyundaiLongitudinalBase, TestHyundaiCanfdHDA2EV
     }
     return self.packer.make_can_msg_panda("SCC_CONTROL", 1, values)
 
-  #TODO-SP: pretty sure we won't use "main" but will use LKAS instead. This is a little placeholder
-  def _mads_engage_msg(self, enabled):
-    return self._lkas_button_msg(enabled)
-
 
 # Tests HDA1 longitudinal for ICE, hybrid, EV
 @parameterized_class([
@@ -281,10 +278,6 @@ class TestHyundaiCanfdHDA1Long(HyundaiLongitudinalBase, TestHyundaiCanfdHDA1Base
       "aReqValue": accel,
     }
     return self.packer.make_can_msg_panda("SCC_CONTROL", 0, values)
-
-  #TODO-SP: pretty sure we won't use "main" but will use LKAS instead. This is a little placeholder
-  def _mads_engage_msg(self, enabled):
-    return self._lkas_button_msg(enabled)
 
   # no knockout
   def test_tester_present_allowed(self):

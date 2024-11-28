@@ -117,9 +117,6 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
     self.__class__.cnt_cruise += 1
     return self.packer.make_can_msg_panda("SCC11", self.SCC_BUS, values)
 
-  def _mads_engage_msg(self, enabled):
-    return self._acc_state_msg(enabled)
-
   def _lkas_button_msg(self, enabled):
     values = {"LFA_Pressed": enabled}
     return self.packer.make_can_msg_panda("BCM_PO_11", 0, values)
@@ -222,13 +219,10 @@ class TestHyundaiLongitudinalSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
     }
     return self.packer.make_can_msg_panda("FCA11", 0, values)
 
-  def _clu11_main_switch(self, enabled):
+  def _acc_state_msg(self, enabled):
     values = {"CF_Clu_CruiseSwState": 0, "CF_Clu_CruiseSwMain": enabled, "CF_Clu_AliveCnt1": self.cnt_button}
     self.__class__.cnt_button += 1
     return self.packer.make_can_msg_panda("CLU11", 0, values)
-
-  def _mads_engage_msg(self, enabled):
-    return self._clu11_main_switch(enabled)
 
   def test_no_aeb_fca11(self):
     self.assertTrue(self._tx(self._fca11_msg()))
@@ -266,13 +260,10 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
   def test_disabled_ecu_alive(self):
     pass
 
-  def _clu11_main_switch(self, enabled):
+  def _acc_state_msg(self, enabled):
     values = {"CF_Clu_CruiseSwState": 0, "CF_Clu_CruiseSwMain": enabled, "CF_Clu_AliveCnt1": self.cnt_button}
     self.__class__.cnt_button += 1
     return self.packer.make_can_msg_panda("CLU11", 0, values)
-
-  def _mads_engage_msg(self, enabled):
-    return self._clu11_main_switch(enabled)
 
 
 if __name__ == "__main__":

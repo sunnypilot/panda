@@ -191,6 +191,9 @@ bool get_honda_fwd_brake(void){
 
 void set_enable_mads(bool c){
   enable_mads = c;
+  if(!c){
+    lkas_main_on = false;
+  }
 }
 
 bool get_enable_mads(void){
