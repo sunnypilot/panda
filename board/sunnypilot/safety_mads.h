@@ -24,8 +24,8 @@ bool lkas_button = false;
 extern bool acc_main_on_prev;
 bool acc_main_on_prev = false;
 
-// extern bool main_button_prev;
-// bool main_button_prev = false;
+extern bool main_button_prev;
+bool main_button_prev = false;
 
 extern uint32_t acc_main_on_mismatches;
 uint32_t acc_main_on_mismatches = 0;
@@ -44,20 +44,6 @@ void mads_set_state(bool state) {
   disengaged_from_brakes = state;
 }
 
-void mads_check_acc_main(void) {
-  if (enable_mads) {
-    if (acc_main_on) {
-      controls_allowed_lat = true;
-    }
-
-    if (!acc_main_on && acc_main_on_prev) {
-      controls_allowed = false;
-      mads_set_state(false);
-    }
-    acc_main_on_prev = acc_main_on;
-  }
-}
-
 // lkas will always be enabled if acc is enabled or if MADS is enabled and the lkas button is pressed
 void mads_check_lkas_main(void) {
   controls_allowed_lat = controls_allowed || (enable_mads && lkas_main_on);
@@ -67,6 +53,15 @@ void mads_check_lkas_main(void) {
     mads_set_state(false);
   }
   lkas_main_on_prev = lkas_main_on;
+}
+
+void mads_check_acc_main(void) {
+  if (!acc_main_on && acc_main_on_prev) {
+    controls_allowed = false;
+    mads_set_state(false);
+  }
+  acc_main_on_prev = acc_main_on;
+  mads_check_lkas_main();
 }
 
 void mads_check_lkas_button(void) {
