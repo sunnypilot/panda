@@ -18,7 +18,7 @@ typedef struct {
 void set_gpio_mode(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
   ENTER_CRITICAL();
   uint32_t tmp = GPIO->MODER;
-  tmp &= ~(3U << (pin * 2U));
+  tmp &= ~((uint32_t)(3U) << ((uint32_t)(pin * 2U)));
   tmp |= (mode << (pin * 2U));
   register_set(&(GPIO->MODER), tmp, 0xFFFFFFFFU);
   EXIT_CRITICAL();
