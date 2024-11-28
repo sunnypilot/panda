@@ -66,7 +66,7 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
 
   if (GET_BUS(to_push) == 2U) {
     int addr = GET_ADDR(to_push);
-  
+
     if (addr == 0x412) {
       uint8_t lkas_hud = GET_BYTE(to_push, 0U) & 0xC0U;
       lkas_button = lkas_hud > 0U;
@@ -152,7 +152,7 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
     if (addr == 0x1D3) {
       acc_main_on = GET_BIT(to_push, 15U);
       lkas_main_on = acc_main_on;
-      // mads_check_acc_main();
+      mads_check_acc_main();
     }
 
     bool stock_ecu_detected = addr == 0x2E4;  // STEERING_LKA

@@ -91,6 +91,8 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
     hyundai_last_button_interaction = MIN(hyundai_last_button_interaction + 1U, HYUNDAI_PREV_BUTTON_SAMPLES);
   }
 
+  //TODO-SP: For some reason, if we uncomment the code below, the tests fails. It's as if the main_button was false somehow
+  // lkas_main_on = main_button;
   if (hyundai_longitudinal) {
     // enter controls on falling edge of resume or set
     bool set = (cruise_button != HYUNDAI_BTN_SET) && (cruise_button_prev == HYUNDAI_BTN_SET);
@@ -104,12 +106,12 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
       controls_allowed = false;
     }
 
-    // if (main_button && !main_button_prev) {
-    //   acc_main_on = !acc_main_on;
-    // }
+    if (main_button && !main_button_prev) {
+      acc_main_on = !acc_main_on;
+    }
 
     cruise_button_prev = cruise_button;
-    // main_button_prev = main_button;
+    main_button_prev = main_button;
   }
 }
 
