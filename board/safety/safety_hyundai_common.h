@@ -104,13 +104,12 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
       controls_allowed = false;
     }
 
-    if (main_button && !main_button_prev) {
-      lkas_main_on = main_button;
-      acc_main_on = !acc_main_on;
-    }
+    // if (main_button && !main_button_prev) {
+    //   acc_main_on = !acc_main_on;
+    // }
 
     cruise_button_prev = cruise_button;
-    main_button_prev = main_button;
+    // main_button_prev = main_button;
   }
 }
 

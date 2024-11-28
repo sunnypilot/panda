@@ -126,11 +126,24 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
     hyundai_common_cruise_state_check(cruise_engaged);
   }
 
-  if ((addr == 0x420) && (((bus == 0) && !hyundai_camera_scc) || ((bus == 2) && hyundai_camera_scc))) {
-    if (!hyundai_longitudinal) {
-      acc_main_on = GET_BIT(to_push, 0U);
-      lkas_main_on = acc_main_on;
-    }
+  // SCC11
+  if (addr == 0x420) {
+    bool temp_bool_engage_mads_from_scc_msg = true;
+    bool cruise_active = GET_BIT(to_push, 0U);
+    lkas_main_on = temp_bool_engage_mads_from_scc_msg && cruise_active;
+  }
+
+  // CLU11
+  if (addr == 0x4F1 ) {
+    bool temp_bool_engage_mads_from_cruise_main_btn_msg = true;
+    bool main_button = GET_BIT(to_push, 3U);
+    lkas_main_on = temp_bool_engage_mads_from_cruise_main_btn_msg && main_button;
+  }
+
+  // LKAS buttons
+  if (addr == 0x391) {
+    bool lkas_button_on = GET_BIT(to_push, 4U);
+    lkas_main_on = lkas_button_on;
   }
 
   if (bus == 0) {
@@ -168,11 +181,6 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
       brake_pressed = ((GET_BYTE(to_push, 5) >> 5U) & 0x3U) == 0x2U;
     }
 
-    if (addr == 0x391) {
-      lkas_button = GET_BIT(to_push, 4U);
-      mads_check_lkas_button();
-    }
-
     bool stock_ecu_detected = (addr == 0x340);
 
     // If openpilot is controlling longitudinal we need to ensure the radar is turned off
@@ -182,8 +190,8 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
     }
     generic_rx_checks(stock_ecu_detected);
   }
-
-  mads_check_acc_main();
+  
+  mads_check_lkas_main();
 }
 
 static bool hyundai_tx_hook(const CANPacket_t *to_send) {
