@@ -91,10 +91,6 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
       cls.safety = None
       raise unittest.SkipTest
 
-  # Make sure we make it not implemented by default for long base because we need to use a different button
-  def _mads_engage_msg(self, enabled):
-    raise NotImplementedError
-
   # override these tests from PandaCarSafetyTest, hyundai longitudinal uses button enable
   def test_disable_control_allowed_from_cruise(self):
     pass
