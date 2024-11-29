@@ -44,7 +44,7 @@ void mads_check_acc_main(void) {
   }
 
   if (!acc_main_on && acc_main_on_prev) {
-    // controls_allowed = false;
+    controls_allowed_lat = false;
     mads_set_state(false);
   }
   acc_main_on_prev = acc_main_on;
