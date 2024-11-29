@@ -145,6 +145,7 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
       int cruise_button = GET_BYTE(to_push, 0) & 0x7U;
       bool main_button = GET_BIT(to_push, 3U);
       hyundai_common_cruise_buttons_check(cruise_button, main_button);
+      lkas_button = main_button;
     }
 
     // gas press, different for EV, hybrid, and ICE models
@@ -170,7 +171,6 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
 
     if (addr == 0x391) {
       lkas_button = GET_BIT(to_push, 4U);
-      mads_check_lkas_button();
     }
 
     bool stock_ecu_detected = (addr == 0x340);
@@ -183,7 +183,7 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
     generic_rx_checks(stock_ecu_detected);
   }
 
-  mads_check_acc_main();
+  mads_check_states();
 
   if (acc_main_on && !acc_main_on_prev) {
     acc_main_on_mismatches = 0;

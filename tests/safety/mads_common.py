@@ -17,11 +17,13 @@ class MadsCommonBase:
     def _test_lat_enabled_when_msg(self, msg, expected_enabled):
         self.safety.set_controls_allowed_lat(False)
         self._rx(msg)
-        self.assertEqual(expected_enabled, self.safety.get_controls_allowed_lat(), (
-            f"(mads expected [{expected_enabled}] | was [{self.safety.get_enable_mads()}]) " +
+        self.assertEqual(expected_enabled, self.safety.get_is_lat_active(), (
+            f"(mads [{self.safety.get_enable_mads()}]) " +
             f"(acc_main_on [{self.safety.get_acc_main_on()}]) " +
-            f"(alternative_experience [{self.safety.get_alternative_experience()}]) " +
-            f"(controls_allowed [{self.safety.get_controls_allowed()}]) "))
+            f"(temp_debug [{self.safety.get_temp_debug()}]) " +
+            f"(controls_allowed [{self.safety.get_controls_allowed()}] lat [{self.safety.get_controls_allowed_lat()}]) " +
+            f"(is_lat_active [{self.safety.get_is_lat_active()}]) " +
+            f"(msg [{hex(msg.addr)}] bus: [{str(msg.bus)}]) lkas_button [{self.safety.get_lkas_button()}]"))
 
     # TODO-SP: We must also test disengagements. Right now we only really "validate" that we've engaged MADS under the conditions.
 

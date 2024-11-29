@@ -220,11 +220,6 @@ class TestHyundaiLongitudinalSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
     }
     return self.packer.make_can_msg_panda("FCA11", 0, values)
 
-  def _acc_state_msg(self, enabled):
-    values = {"CF_Clu_CruiseSwState": 0, "CF_Clu_CruiseSwMain": enabled, "CF_Clu_AliveCnt1": self.cnt_button}
-    self.__class__.cnt_button += 1
-    return self.packer.make_can_msg_panda("CLU11", 0, values)
-
   def test_no_aeb_fca11(self):
     self.assertTrue(self._tx(self._fca11_msg()))
     self.assertFalse(self._tx(self._fca11_msg(vsm_aeb_req=True)))

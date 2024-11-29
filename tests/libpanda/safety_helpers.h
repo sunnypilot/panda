@@ -43,6 +43,10 @@ bool get_controls_allowed_lat(void){
   return controls_allowed_lat;
 }
 
+bool get_is_lat_active(void){
+  return is_lat_active();
+}
+
 int get_alternative_experience(void){
   return alternative_experience;
 }
@@ -201,6 +205,14 @@ bool get_hyundai_longitudinal(void){
     return hyundai_longitudinal;
 }
 
+bool get_lkas_button(void){
+    return lkas_button;
+}
+
+int get_temp_debug(void){
+    return temp_debug;
+}
+
 void init_tests(void){
   // get HW_TYPE from env variable set in test.sh
   if (getenv("HW_TYPE")) {
@@ -212,5 +224,4 @@ void init_tests(void){
   ts_steer_req_mismatch_last = 0;
   valid_steer_req_count = 0;
   invalid_steer_req_count = 0;
-//  enable_mads = false;
 }

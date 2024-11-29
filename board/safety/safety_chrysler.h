@@ -80,7 +80,7 @@ static void chrysler_rx_hook(const CANPacket_t *to_push) {
     pcm_cruise_check(cruise_engaged);
 
     acc_main_on = GET_BIT(to_push, 20U);
-    mads_check_acc_main();
+    mads_check_states();
   }
 
   // TODO: use the same message for both

@@ -15,6 +15,9 @@ bool controls_allowed_lat = false;
 extern bool lkas_button;
 bool lkas_button = false;
 
+extern int temp_debug;
+int temp_debug = 0;
+
 extern bool acc_main_on_prev;
 bool acc_main_on_prev = false;
 
@@ -38,7 +41,14 @@ void mads_set_state(bool state) {
   disengaged_from_brakes = state;
 }
 
-void mads_check_acc_main(void) {
+void _mads_check_lkas_button(void) {
+  if (lkas_button && enable_mads) {
+    controls_allowed_lat = true;
+    lkas_button = false;
+  }
+}
+
+void mads_check_states(void) {
   if (acc_main_on && enable_mads) {
     controls_allowed_lat = true;
   }
@@ -48,12 +58,7 @@ void mads_check_acc_main(void) {
     mads_set_state(false);
   }
   acc_main_on_prev = acc_main_on;
-}
-
-void mads_check_lkas_button(void) {
-  if (lkas_button && enable_mads) {
-    controls_allowed_lat = true;
-  }
+  _mads_check_lkas_button();
 }
 
 static void mads_exit_controls(void) {
@@ -86,7 +91,7 @@ void mads_reset_acc_main(const bool acc_main_on_tx) {
     acc_main_on_mismatches += 1U;
     if (acc_main_on_mismatches >= 25U) {
       acc_main_on = acc_main_on_tx;
-      mads_check_acc_main();
+      mads_check_states();
     }
   } else {
     acc_main_on_mismatches = 0U;

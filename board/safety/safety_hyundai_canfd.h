@@ -74,7 +74,6 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
         main_button = GET_BIT(to_push, 34U);
         lkas_button = GET_BIT(to_push, 39U);
       }
-      mads_check_lkas_button();
       hyundai_common_cruise_buttons_check(cruise_button, main_button);
     }
 
@@ -113,7 +112,7 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
     }
   }
 
-  mads_check_acc_main();
+  mads_check_states();
 
   const int steer_addr = hyundai_canfd_hda2 ? hyundai_canfd_hda2_get_lkas_addr() : 0x12a;
   bool stock_ecu_detected = (addr == steer_addr) && (bus == 0);
