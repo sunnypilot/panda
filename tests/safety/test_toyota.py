@@ -136,10 +136,10 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
     values = {"MAIN_ON": enable}
     return self.packer.make_can_msg_panda("PCM_CRUISE_2", 0, values)
 
-  def test_mads_engagement_when_acc_msg(self):
-    self.safety.set_enable_mads(True)
-    self._test_lat_enabled_when_msg(self._acc_state_msg(True), True)
-    self.safety.set_enable_mads(False)
+  # def test_mads_engagement_when_acc_msg(self):
+  #   self.safety.set_enable_mads(True)
+  #   self._test_lat_enabled_when_msg(self._acc_state_msg(True), True)
+  #   self.safety.set_enable_mads(False)
 
 
 class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):

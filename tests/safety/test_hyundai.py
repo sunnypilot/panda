@@ -256,11 +256,5 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
   def test_disabled_ecu_alive(self):
     pass
 
-  def _acc_state_msg(self, enabled):
-    values = {"CF_Clu_CruiseSwState": 0, "CF_Clu_CruiseSwMain": enabled, "CF_Clu_AliveCnt1": self.cnt_button}
-    self.__class__.cnt_button += 1
-    return self.packer.make_can_msg_panda("CLU11", 0, values)
-
-
 if __name__ == "__main__":
   unittest.main()
