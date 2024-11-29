@@ -12,12 +12,6 @@ bool disengaged_from_brakes = false;
 extern bool controls_allowed_lat;
 bool controls_allowed_lat = false;
 
-extern bool lkas_main_on;
-bool lkas_main_on = false;
-
-extern bool lkas_main_on_prev;
-bool lkas_main_on_prev = false;
-
 extern bool lkas_button;
 bool lkas_button = false;
 
@@ -44,27 +38,22 @@ void mads_set_state(bool state) {
   disengaged_from_brakes = state;
 }
 
-// lkas will always be enabled if acc is enabled or if MADS is enabled and the lkas button is pressed
-void mads_check_lkas_main(void) {
-  controls_allowed_lat = controls_allowed || (enable_mads && lkas_main_on);
-
-  if (!lkas_main_on && lkas_main_on_prev) {
-    controls_allowed_lat = false;
-    mads_set_state(false);
-  }
-  lkas_main_on_prev = lkas_main_on;
-}
-
 void mads_check_acc_main(void) {
+  if (acc_main_on && enable_mads) {
+    controls_allowed_lat = true;
+  }
+
   if (!acc_main_on && acc_main_on_prev) {
+    // controls_allowed = false; // THIS CAUSES THE OTHER TESTS TO FAIL
     mads_set_state(false);
   }
   acc_main_on_prev = acc_main_on;
-  mads_check_lkas_main();
 }
 
 void mads_check_lkas_button(void) {
-    lkas_main_on = lkas_button;
+  if (lkas_button && enable_mads) {
+    controls_allowed_lat = true;
+  }
 }
 
 static void mads_exit_controls(void) {
@@ -81,9 +70,8 @@ static void mads_resume_controls(void) {
   }
 }
 
-void check_braking_condition(bool state, bool state_prev) {
+void mads_check_braking_condition(bool state, bool state_prev) {
   if (state && (!state_prev || vehicle_moving)) {
-    controls_allowed = false;
     if (disengage_lateral_on_brake) {
       mads_exit_controls();
     }
@@ -93,7 +81,7 @@ void check_braking_condition(bool state, bool state_prev) {
   }
 }
 
-void reset_acc_main(const bool acc_main_on_tx) {
+void mads_reset_acc_main(const bool acc_main_on_tx) {
   if (acc_main_on && !acc_main_on_tx) {
     acc_main_on_mismatches += 1U;
     if (acc_main_on_mismatches >= 25U) {

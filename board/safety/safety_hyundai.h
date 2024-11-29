@@ -41,6 +41,7 @@ static const CanMsg HYUNDAI_TX_MSGS[] = {
 #define HYUNDAI_SCC12_ADDR_CHECK(scc_bus)                                                                                  \
   {.msg = {{0x421, (scc_bus), 8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}}, \
 
+static const int HYUNDAI_PARAM_LFA_BUTTON = 1024;
 static bool hyundai_legacy = false;
 
 static uint8_t hyundai_get_counter(const CANPacket_t *to_push) {
@@ -129,7 +130,6 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
   if ((addr == 0x420) && (((bus == 0) && !hyundai_camera_scc) || ((bus == 2) && hyundai_camera_scc))) {
     if (!hyundai_longitudinal) {
       acc_main_on = GET_BIT(to_push, 0U);
-      lkas_main_on = acc_main_on;
     }
   }
 
@@ -144,7 +144,6 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
     if (addr == 0x4F1) {
       int cruise_button = GET_BYTE(to_push, 0) & 0x7U;
       bool main_button = GET_BIT(to_push, 3U);
-      lkas_main_on = main_button;
       hyundai_common_cruise_buttons_check(cruise_button, main_button);
     }
 
@@ -185,7 +184,10 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
   }
 
   mads_check_acc_main();
-  mads_check_lkas_main();
+
+  if (acc_main_on && !acc_main_on_prev) {
+    acc_main_on_mismatches = 0;
+  }
 }
 
 static bool hyundai_tx_hook(const CANPacket_t *to_send) {

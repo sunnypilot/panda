@@ -110,7 +110,6 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
       hyundai_common_cruise_state_check(cruise_engaged);
 
       acc_main_on = GET_BIT(to_push, 66U);
-      lkas_main_on = acc_main_on;
     }
   }
 
@@ -126,6 +125,9 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
   }
   generic_rx_checks(stock_ecu_detected);
 
+  if (acc_main_on && !acc_main_on_prev) {
+    acc_main_on_mismatches = 0;
+  }
 }
 
 static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
@@ -200,6 +202,9 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
     if (violation) {
       tx = false;
     }
+
+    bool acc_main_on_tx = GET_BIT(to_send, 66U);
+    mads_reset_acc_main(acc_main_on_tx);
   }
 
   return tx;

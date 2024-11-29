@@ -124,6 +124,7 @@ static bool is_msg_valid(RxCheck addr_list[], int index) {
       valid = false;
       controls_allowed = false;
       mads_set_state(false);
+      // temp_debug = 40;
     }
   }
   return valid;
@@ -309,6 +310,7 @@ void safety_tick(const safety_config *cfg) {
       if (lagging) {
         controls_allowed = false;
         mads_set_state(false);
+        // temp_debug = 50;
       }
 
       if (lagging || !is_msg_valid(cfg->rx_checks, i)) {
@@ -337,11 +339,17 @@ void generic_rx_checks(bool stock_ecu_detected) {
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
-  check_braking_condition(brake_pressed, brake_pressed_prev);
+  if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+    controls_allowed = false;
+  }
+  mads_check_braking_condition(brake_pressed, brake_pressed_prev);
   brake_pressed_prev = brake_pressed;
 
   // exit controls on rising edge of regen paddle
-  check_braking_condition(regen_braking, regen_braking_prev);
+  if (regen_braking && (!regen_braking_prev || vehicle_moving)) {
+    controls_allowed = false;
+  }
+  mads_check_braking_condition(regen_braking, regen_braking_prev);
   regen_braking_prev = regen_braking;
 
   // check if stock ECU is on bus broken by car harness

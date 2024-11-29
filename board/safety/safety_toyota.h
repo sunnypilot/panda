@@ -151,7 +151,6 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
 
     if (addr == 0x1D3) {
       acc_main_on = GET_BIT(to_push, 15U);
-      lkas_main_on = acc_main_on;
       mads_check_acc_main();
     }
 
@@ -161,7 +160,6 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
     }
     generic_rx_checks(stock_ecu_detected);
   }
-  mads_check_lkas_main();
 }
 
 static bool toyota_tx_hook(const CANPacket_t *to_send) {

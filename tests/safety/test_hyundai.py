@@ -6,6 +6,7 @@ from panda.tests.libpanda import libpanda_py
 import panda.tests.safety.common as common
 from panda.tests.safety.common import CANPackerPanda
 from panda.tests.safety.hyundai_common import HyundaiButtonBase, HyundaiLongitudinalBase
+from panda.tests.safety.mads_common import MadsCommonBase
 
 
 # 4 bit checkusm used in some hyundai messages

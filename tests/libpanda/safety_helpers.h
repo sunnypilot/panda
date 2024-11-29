@@ -191,9 +191,6 @@ bool get_honda_fwd_brake(void){
 
 void set_enable_mads(bool c){
   enable_mads = c;
-  if(!c){
-    lkas_main_on = false;
-  }
 }
 
 bool get_enable_mads(void){
@@ -202,10 +199,6 @@ bool get_enable_mads(void){
 
 bool get_hyundai_longitudinal(void){
     return hyundai_longitudinal;
-}
-
-bool get_lkas_main_on(void){
-    return lkas_main_on;
 }
 
 void init_tests(void){
@@ -219,4 +212,5 @@ void init_tests(void){
   ts_steer_req_mismatch_last = 0;
   valid_steer_req_count = 0;
   invalid_steer_req_count = 0;
+//  enable_mads = false;
 }
