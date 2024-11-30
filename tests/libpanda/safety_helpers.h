@@ -36,7 +36,7 @@ bool get_controls_allowed(void){
 }
 
 bool get_controls_allowed_lat(void){
-  return mads_is_lateral_control_allowed();
+  return is_lat_active();
 }
 
 void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake){
@@ -195,10 +195,6 @@ void set_honda_fwd_brake(bool c){
 
 bool get_honda_fwd_brake(void){
   return honda_fwd_brake;
-}
-
-int get_temp_debug(void){
-    return temp_debug;
 }
 
 void init_tests(void){

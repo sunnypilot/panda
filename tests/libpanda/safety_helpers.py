@@ -56,7 +56,6 @@ def setup_safety_helpers(ffi):
   void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake);
   bool get_enable_mads(void);
   bool get_disengage_lat_on_brake(void);
-  int get_temp_debug(void);
   """)
 
 class PandaSafety(Protocol):
@@ -113,5 +112,4 @@ class PandaSafety(Protocol):
   def set_enable_mads(self, enable_mads: bool, disengage_lat_on_brake: bool) -> None: ...
   def get_enable_mads(self) -> bool: ...
   def get_disengage_lat_on_brake(self) -> bool: ...
-  def get_temp_debug(self) -> int: ...
 

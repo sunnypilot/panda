@@ -14,9 +14,6 @@
 
 #define MISMATCH_DEFAULT_THRESHOLD 25
 
-extern int temp_debug;
-int temp_debug = 0;
-
 // Button transition types
 typedef enum {
     BUTTON_NO_CHANGE,
@@ -26,9 +23,11 @@ typedef enum {
 
 // MADS System State Struct
 typedef struct {
+    // Values from stock that we need
+    const bool * is_vehicle_moving_ptr;
+    
     // System configuration flags
     bool disengage_lateral_on_brake;
-    bool vehicle_moving;
 
     // System-wide enable/disable
     bool system_enabled;
@@ -39,7 +38,13 @@ typedef struct {
         bool last;
         ButtonTransition transition;
         uint32_t press_timestamp;
-    } cruise_button, lkas_button;
+    } cruise_button;
+    struct {
+        bool current;
+        bool last;
+        ButtonTransition transition;
+        uint32_t press_timestamp;
+    } lkas_button;  // Rule 12.3: separate declarations
 
     // Vehicle condition states
     bool is_braking;
@@ -59,20 +64,27 @@ typedef struct {
 } MADSState;
 
 // Global state instance
-MADSState _mads_state;
+static MADSState _mads_state;  // Rule 8.4: static for internal linkage
 
 // Determine button transition
-ButtonTransition _get_button_transition(bool current, bool last) {
-    if (current && !last) return BUTTON_PRESSED;
-    if (!current && last) return BUTTON_RELEASED;
-    return BUTTON_NO_CHANGE;
+static ButtonTransition _get_button_transition(bool current, bool last) {  // Rule 8.7: static for internal linkage
+    ButtonTransition result = BUTTON_NO_CHANGE;
+    if (current && !last) {
+        result = BUTTON_PRESSED;
+    } else if (!current && last) {
+        result = BUTTON_RELEASED;
+    } else {
+        result = BUTTON_NO_CHANGE;
+    }
+    return result;  // Rule 15.5: single point of exit
 }
 
 // Initialize the MADS state
-void mads_state_init(void) {
+static void mads_state_init(void) {  // Rule 8.7: static for internal linkage
+    _mads_state.is_vehicle_moving_ptr = NULL;
+    
     _mads_state.system_enabled = false;
     _mads_state.disengage_lateral_on_brake = true;
-    _mads_state.vehicle_moving = false;
 
     // Button state initialization
     _mads_state.cruise_button.current = false;
@@ -96,11 +108,10 @@ void mads_state_init(void) {
     _mads_state.cruise_engaged = false;
     _mads_state.controls_allowed_lat = false;
     _mads_state.disengaged_from_brakes = false;
-    // temp_debug = 99;
 }
 
 // Exit lateral controls
-void _mads_exit_controls(void) {
+static void _mads_exit_controls(void) {  // Rule 8.7: static for internal linkage
     if (_mads_state.controls_allowed_lat) {
         _mads_state.disengaged_from_brakes = true;
         _mads_state.controls_allowed_lat = false;
@@ -108,7 +119,7 @@ void _mads_exit_controls(void) {
 }
 
 // Resume lateral controls
-void _mads_resume_controls(void) {
+static void _mads_resume_controls(void) {  // Rule 8.7: static for internal linkage
     if (_mads_state.disengaged_from_brakes) {
         _mads_state.controls_allowed_lat = controls_allowed;
         _mads_state.disengaged_from_brakes = false;
@@ -116,17 +127,15 @@ void _mads_resume_controls(void) {
 }
 
 // Reset ACC main state with mismatch handling
-void _mads_reset_acc_main(bool acc_main_tx) {
+static void _mads_reset_acc_main(bool acc_main_tx) {  // Rule 8.7: static for internal linkage
     if (_mads_state.acc_main.current && !acc_main_tx) {
         _mads_state.acc_main.mismatch_count++;
-        
+
         if (_mads_state.acc_main.mismatch_count >= _mads_state.acc_main.mismatch_threshold) {
             _mads_state.acc_main.current = acc_main_tx;
-            
+
             // Update lateral control based on ACC main state
-            if (!acc_main_tx) {
-                _mads_state.controls_allowed_lat = false;
-            }
+            _mads_state.controls_allowed_lat = false;
         }
     } else {
         _mads_state.acc_main.mismatch_count = 0;
@@ -134,27 +143,33 @@ void _mads_reset_acc_main(bool acc_main_tx) {
 }
 
 // Check braking condition
-void _mads_check_braking(bool is_braking, bool was_braking) {
-    if (is_braking && (!was_braking || _mads_state.vehicle_moving)) {
+static void _mads_check_braking(bool is_braking) {  // Rule 8.7: static for internal linkage
+    bool was_braking = _mads_state.is_braking;
+    if (is_braking && (!was_braking || *_mads_state.is_vehicle_moving_ptr)) {
         _mads_state.controls_allowed_lat = false;
-        
+
         if (_mads_state.disengage_lateral_on_brake) {
             _mads_exit_controls();
         }
-    } else if (!is_braking && _mads_state.disengage_lateral_on_brake) {
+    }
+
+    if (!is_braking && _mads_state.disengage_lateral_on_brake) {
         _mads_resume_controls();
     }
+    _mads_state.is_braking = is_braking;
 }
 
 // Update state based on input conditions
-void mads_state_update(bool cruise_button, bool lkas_button, bool is_braking, bool cruise_engaged, bool acc_main, bool vehicle_moving) {
-    _mads_state.vehicle_moving = vehicle_moving;
+void mads_state_update(const bool * op_vehicle_moving, bool cruise_button, bool lkas_button, bool is_braking, bool cruise_engaged, bool acc_main) {
+    if (_mads_state.is_vehicle_moving_ptr == NULL) {
+        _mads_state.is_vehicle_moving_ptr = op_vehicle_moving;
+    }
 
     // Update button states
     _mads_state.cruise_button.last = _mads_state.cruise_button.current;
     _mads_state.cruise_button.current = cruise_button;
     _mads_state.cruise_button.transition = _get_button_transition(
-        _mads_state.cruise_button.current, 
+        _mads_state.cruise_button.current,
         _mads_state.cruise_button.last
     );
 
@@ -166,7 +181,7 @@ void mads_state_update(bool cruise_button, bool lkas_button, bool is_braking, bo
     _mads_state.lkas_button.last = _mads_state.lkas_button.current;
     _mads_state.lkas_button.current = lkas_button;
     _mads_state.lkas_button.transition = _get_button_transition(
-        _mads_state.lkas_button.current, 
+        _mads_state.lkas_button.current,
         _mads_state.lkas_button.last
     );
 
@@ -181,24 +196,17 @@ void mads_state_update(bool cruise_button, bool lkas_button, bool is_braking, bo
 
     // Check ACC main state and braking conditions
     _mads_reset_acc_main(acc_main);
-    _mads_check_braking(is_braking, _mads_state.is_braking);
+    _mads_check_braking(is_braking);
 
     // Update other states
-    _mads_state.is_braking = is_braking;
     _mads_state.cruise_engaged = cruise_engaged;
-
-    // Determine lateral control permission
-    if (!_mads_state.system_enabled) {
-        _mads_state.controls_allowed_lat = false;
-        return;
-    }
 
     // Lateral control rules with momentary button press logic
     _mads_state.controls_allowed_lat = (
         cruise_engaged &&                   // Cruise control engaged
-        !is_braking &&                      // Not braking
-        (_mads_state.cruise_button.transition == BUTTON_PRESSED ||
-         _mads_state.lkas_button.transition == BUTTON_PRESSED)  // Momentary button press
+        !_mads_state.is_braking &&                      // Not braking
+        ((_mads_state.cruise_button.transition == BUTTON_PRESSED) ||  // Rule 12.1: explicit parentheses
+         (_mads_state.lkas_button.transition == BUTTON_PRESSED))  // Rule 12.1: explicit parentheses
     );
 }
 
@@ -209,13 +217,9 @@ void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
     _mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
 }
 
-// Check if lateral control is currently allowed
-bool mads_is_lateral_control_allowed(void) {
-    // Note: controls_allowed is defined on safety.h and it's available to us by c magic.
-    if (_mads_state.system_enabled) {
-        return controls_allowed || _mads_state.controls_allowed_lat;
-    }
-    return controls_allowed;
+// Check if lateral control is currently allowed by MADS
+bool mads_is_lateral_control_allowed_by_mads(void) {
+    return _mads_state.system_enabled && _mads_state.controls_allowed_lat;
 }
 
 #endif // MADS_STATE_H

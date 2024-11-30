@@ -1,4 +1,3 @@
-import unittest
 from abc import abstractmethod
 
 
@@ -21,7 +20,7 @@ class MadsCommonBase:
     #                     msg = self._acc_state_msg(acc_state_msg_valid)
     #                     self._rx(msg)
     #                     self.assertEqual(acc_state_msg_valid, self.safety.get_acc_main_on(), f"msg: {hex(msg.addr)}")
-    # 
+    #
     # def test_lkas_button(self):
     #     for enable_mads in (True, False):
     #         with self.subTest("enable_mads", enable_mads=enable_mads):
