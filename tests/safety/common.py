@@ -8,6 +8,7 @@ from collections.abc import Callable
 from opendbc.can.packer import CANPacker  # pylint: disable=import-error
 from panda import ALTERNATIVE_EXPERIENCE
 from panda.tests.libpanda import libpanda_py
+from panda.tests.safety.mads_common import MadsCommonBase
 
 MAX_WRONG_COUNTERS = 5
 MAX_SAMPLE_VALS = 6
@@ -95,7 +96,6 @@ class PandaSafetyTestBase(unittest.TestCase):
       for v in np.concatenate((np.arange(min_possible_value, max_possible_value, test_delta), np.array([0, inactive_value]))):
         v = round(v, 2)  # floats might not hit exact boundary conditions without rounding
         self.safety.set_controls_allowed(controls_allowed)
-        self.safety.set_controls_allowed_lat(controls_allowed)
         if additional_setup is not None:
           additional_setup(v)
         should_tx = controls_allowed and min_allowed_value <= v <= max_allowed_value
@@ -219,7 +219,6 @@ class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
     for enabled in [0, 1]:
       for t in range(int(-self.MAX_TORQUE * 1.5), int(self.MAX_TORQUE * 1.5)):
         self.safety.set_controls_allowed(enabled)
-        self.safety.set_controls_allowed_lat(enabled)
         self._set_prev_torque(t)
         if abs(t) > self.MAX_TORQUE or (not enabled and abs(t) > 0):
           self.assertFalse(self._tx(self._torque_cmd_msg(t)))
@@ -228,7 +227,6 @@ class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
 
   def test_non_realtime_limit_up(self):
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
 
     self._set_prev_torque(0)
     self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_RATE_UP)))
@@ -238,7 +236,6 @@ class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
     self._set_prev_torque(0)
     self.assertFalse(self._tx(self._torque_cmd_msg(self.MAX_RATE_UP + 1)))
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
     self._set_prev_torque(0)
     self.assertFalse(self._tx(self._torque_cmd_msg(-self.MAX_RATE_UP - 1)))
 
@@ -248,7 +245,6 @@ class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
       raise unittest.SkipTest("No steering request bit")
 
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
     self._set_prev_torque(self.MAX_TORQUE)
 
     # Send torque successfully, then only drop the request bit and ensure it stays blocked
@@ -289,7 +285,6 @@ class SteerRequestCutSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
 
       # Allow torque cut
       self.safety.set_controls_allowed(True)
-      self.safety.set_controls_allowed_lat(True)
       self._set_prev_torque(self.MAX_TORQUE)
       for _ in range(min_valid_steer_frames):
         self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_TORQUE, steer_req=1)))
@@ -321,7 +316,6 @@ class SteerRequestCutSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
 
       # Allow torque cut
       self.safety.set_controls_allowed(True)
-      self.safety.set_controls_allowed_lat(True)
       self._set_prev_torque(self.MAX_TORQUE)
       for _ in range(self.MIN_VALID_STEERING_FRAMES):
         self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_TORQUE, steer_req=1)))
@@ -349,7 +343,6 @@ class SteerRequestCutSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
 
       # Make sure valid_steer_req_count doesn't affect this test
       self.safety.set_controls_allowed(True)
-      self.safety.set_controls_allowed_lat(True)
       self._set_prev_torque(self.MAX_TORQUE)
       for _ in range(self.MIN_VALID_STEERING_FRAMES):
         self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_TORQUE, steer_req=1)))
@@ -396,7 +389,6 @@ class DriverTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
   def test_against_torque_driver(self):
     # Tests down limits and driver torque blending
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
 
     # Cannot stay at MAX_TORQUE if above DRIVER_TORQUE_ALLOWANCE
     for sign in [-1, 1]:
@@ -435,7 +427,6 @@ class DriverTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
 
   def test_realtime_limits(self):
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
 
     for sign in [-1, 1]:
       self.safety.init_tests()
@@ -492,7 +483,6 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
     for controls_allowed in [True, False]:
       for torque in np.arange(-self.MAX_TORQUE - 1000, self.MAX_TORQUE + 1000, self.MAX_RATE_UP):
         self.safety.set_controls_allowed(controls_allowed)
-        self.safety.set_controls_allowed_lat(controls_allowed)
         self.safety.set_rt_torque_last(torque)
         self.safety.set_torque_meas(torque, torque)
         self.safety.set_desired_torque_last(torque - self.MAX_RATE_UP)
@@ -506,7 +496,6 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
 
   def test_non_realtime_limit_down(self):
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
 
     torque_meas = self.MAX_TORQUE - self.MAX_TORQUE_ERROR - 50
 
@@ -522,7 +511,6 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
 
   def test_exceed_torque_sensor(self):
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
 
     for sign in [-1, 1]:
       self._set_prev_torque(0)
@@ -534,7 +522,6 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
 
   def test_realtime_limit_up(self):
     self.safety.set_controls_allowed(True)
-    self.safety.set_controls_allowed_lat(True)
 
     for sign in [-1, 1]:
       self.safety.init_tests()
@@ -649,7 +636,6 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
 
         self._set_prev_desired_angle(a)
         self.safety.set_controls_allowed(1)
-        self.safety.set_controls_allowed_lat(1)
 
         # Stay within limits
         # Up
@@ -670,7 +656,6 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
 
         # Don't change
         self.safety.set_controls_allowed(1)
-        self.safety.set_controls_allowed_lat(1)
         self._set_prev_desired_angle(a)
         self.assertTrue(self.safety.get_controls_allowed())
         self.assertTrue(self._tx(self._angle_cmd_msg(a, True)))
@@ -681,7 +666,6 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
 
         # Check desired steer should be the same as steer angle when controls are off
         self.safety.set_controls_allowed(0)
-        self.safety.set_controls_allowed_lat(0)
         self.assertTrue(self._tx(self._angle_cmd_msg(a, False)))
 
   def test_angle_cmd_when_disabled(self):
@@ -689,7 +673,6 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
     # steer actuation bit is 0, regardless of controls allowed.
     for controls_allowed in (True, False):
       self.safety.set_controls_allowed(controls_allowed)
-      self.safety.set_controls_allowed_lat(controls_allowed)
 
       for steer_control_enabled in (True, False):
         for angle_meas in np.arange(-90, 91, 10):
@@ -703,7 +686,7 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
             self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(angle_cmd, steer_control_enabled)))
 
 
-class PandaSafetyTest(PandaSafetyTestBase):
+class PandaSafetyTest(PandaSafetyTestBase, MadsCommonBase):
   TX_MSGS: list[list[int]] | None = None
   SCANNED_ADDRS = [*range(0x800),                      # Entire 11-bit CAN address space
                    *range(0x18DA00F1, 0x18DB00F1, 0x100),   # 29-bit UDS physical addressing
@@ -753,11 +736,22 @@ class PandaSafetyTest(PandaSafetyTestBase):
     self.safety.set_controls_allowed(0)
     self.assertFalse(self.safety.get_controls_allowed())
 
-  def test_manually_enable_controls_allowed_lat(self):
-    self.safety.set_controls_allowed_lat(True)
-    self.assertTrue(self.safety.get_controls_allowed_lat())
-    self.safety.set_controls_allowed_lat(False)
-    self.assertFalse(self.safety.get_controls_allowed_lat())
+  def test_controls_allowed_must_always_enable_lat(self):
+    for mads_enabled in [True, False]:
+      with self.subTest("mads enabled", mads_enabled=mads_enabled):
+        self.safety.set_enable_mads(mads_enabled, False)
+        for controls_allowed in [True, False]:
+          with self.subTest("controls allowed", controls_allowed=controls_allowed):
+            self.safety.set_controls_allowed(controls_allowed)
+            self.assertEqual(self.safety.get_controls_allowed(), self.safety.get_controls_allowed_lat())
+
+  def test_mads_disengage_lat_on_brake_setup(self):
+    for mads_enabled in [True, False]:
+      with self.subTest("mads enabled", mads_enabled=mads_enabled):
+        for disengage_on_brake in [True, False]:
+          with self.subTest("disengage on brake", disengage_on_brake=disengage_on_brake):
+            self.safety.set_enable_mads(mads_enabled, disengage_on_brake)
+            self.assertEqual(disengage_on_brake, self.safety.get_disengage_lat_on_brake())
 
   def test_tx_hook_on_wrong_safety_mode(self):
     files = os.listdir(os.path.dirname(os.path.realpath(__file__)))
@@ -830,7 +824,6 @@ class PandaSafetyTest(PandaSafetyTestBase):
       for addr, bus, test_name in tx_msgs:
         msg = make_msg(bus, addr)
         self.safety.set_controls_allowed(1)
-        self.safety.set_controls_allowed_lat(1)
         # TODO: this should be blocked
         if current_test in ["TestNissanSafety", "TestNissanSafetyAltEpsBus", "TestNissanLeafSafety"] and [addr, bus] in self.TX_MSGS:
           continue

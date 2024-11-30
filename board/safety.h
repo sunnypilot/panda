@@ -76,11 +76,13 @@ bool brake_pressed = false;
 bool brake_pressed_prev = false;
 bool regen_braking = false;
 bool regen_braking_prev = false;
+bool is_braking = false;
 bool cruise_engaged_prev = false;
 struct sample_t vehicle_speed;
 bool vehicle_moving = false;
 bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
 int cruise_button_prev = 0;
+int lkas_button_prev = 0;
 bool safety_rx_checks_invalid = false;
 
 // for safety modes with torque steering control
@@ -119,7 +121,6 @@ static bool is_msg_valid(RxCheck addr_list[], int index) {
     if (!addr_list[index].status.valid_checksum || !addr_list[index].status.valid_quality_flag || (addr_list[index].status.wrong_counters >= MAX_WRONG_COUNTERS)) {
       valid = false;
       controls_allowed = false;
-      mads_set_state(false);
     }
   }
   return valid;
@@ -304,7 +305,6 @@ void safety_tick(const safety_config *cfg) {
       cfg->rx_checks[i].status.lagging = lagging;
       if (lagging) {
         controls_allowed = false;
-        mads_set_state(false);
       }
 
       if (lagging || !is_msg_valid(cfg->rx_checks, i)) {
@@ -328,26 +328,26 @@ void generic_rx_checks(bool stock_ecu_detected) {
   // exit controls on rising edge of gas press
   if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS)) {
     controls_allowed = false;
-    mads_set_state(false);
   }
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
-  check_braking_condition(brake_pressed, brake_pressed_prev);
+  if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+    controls_allowed = false;
+  }
   brake_pressed_prev = brake_pressed;
 
   // exit controls on rising edge of regen paddle
-  check_braking_condition(regen_braking, regen_braking_prev);
-  regen_braking_prev = regen_braking;
-
-  if (controls_allowed) {
-    controls_allowed_lat = true;
+  if (regen_braking && (!regen_braking_prev || vehicle_moving)) {
+    controls_allowed = false;
   }
+  regen_braking_prev = regen_braking;
 
   // check if stock ECU is on bus broken by car harness
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
     relay_malfunction_set();
   }
+  mads_state_update(cruise_button_prev, lkas_button_prev, brake_pressed || regen_braking, cruise_engaged_prev, acc_main_on, vehicle_moving);
 }
 
 static void relay_malfunction_reset(void) {
@@ -405,6 +405,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   vehicle_moving = false;
   acc_main_on = false;
   cruise_button_prev = 0;
+  lkas_button_prev = 0;
   desired_torque_last = 0;
   rt_torque_last = 0;
   ts_angle_last = 0;
@@ -421,7 +422,6 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   reset_sample(&angle_meas);
 
   controls_allowed = false;
-  controls_allowed_lat = false;
   relay_malfunction_reset();
   safety_rx_checks_invalid = false;
 
@@ -606,9 +606,8 @@ bool longitudinal_brake_checks(int desired_brake, const LongitudinalLimits limit
 bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLimits limits) {
   bool violation = false;
   uint32_t ts = microsecond_timer_get();
-  bool lat_active = controls_allowed || controls_allowed_lat;
 
-  if (lat_active) {
+  if (mads_is_lateral_control_allowed()) {
     // *** global torque limit check ***
     violation |= max_limit_check(desired_torque, limits.max_steer, -limits.max_steer);
 
@@ -635,7 +634,7 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   }
 
   // no torque if controls is not allowed
-  if (!lat_active && (desired_torque != 0)) {
+  if (!mads_is_lateral_control_allowed() && (desired_torque != 0)) {
     violation = true;
   }
 
@@ -677,7 +676,7 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   }
 
   // reset to 0 if either controls is not allowed or there's a violation
-  if (violation || !lat_active) {
+  if (violation || !mads_is_lateral_control_allowed()) {
     valid_steer_req_count = 0;
     invalid_steer_req_count = 0;
     desired_torque_last = 0;
@@ -692,9 +691,8 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
 // Safety checks for angle-based steering commands
 bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const SteeringLimits limits) {
   bool violation = false;
-  bool lat_active = controls_allowed || controls_allowed_lat;
 
-  if (lat_active && steer_control_enabled) {
+  if (mads_is_lateral_control_allowed() && steer_control_enabled) {
     // convert floating point angle rate limits to integers in the scale of the desired angle on CAN,
     // add 1 to not false trigger the violation. also fudge the speed by 1 m/s so rate limits are
     // always slightly above openpilot's in case we read an updated speed in between angle commands
@@ -737,7 +735,7 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
   }
 
   // No angle control allowed when controls are not allowed
-  violation |= !lat_active && steer_control_enabled;
+  violation |= !mads_is_lateral_control_allowed() && steer_control_enabled;
 
   return violation;
 }

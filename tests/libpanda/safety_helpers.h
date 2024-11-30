@@ -23,10 +23,6 @@ void set_controls_allowed(bool c){
   controls_allowed = c;
 }
 
-void set_controls_allowed_lat(bool c){
-  controls_allowed_lat = c;
-}
-
 void set_alternative_experience(int mode){
   alternative_experience = mode;
 }
@@ -40,7 +36,19 @@ bool get_controls_allowed(void){
 }
 
 bool get_controls_allowed_lat(void){
-  return controls_allowed_lat;
+  return mads_is_lateral_control_allowed();
+}
+
+void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake){
+	mads_set_system_state(enable_mads, disengage_lat_on_brake);
+}
+
+bool get_enable_mads(void){
+	return _mads_state.system_enabled;
+}
+
+bool get_disengage_lat_on_brake(void){
+	return _mads_state.disengage_lateral_on_brake;
 }
 
 int get_alternative_experience(void){
@@ -189,8 +197,8 @@ bool get_honda_fwd_brake(void){
   return honda_fwd_brake;
 }
 
-void set_enable_mads(bool c){
-  enable_mads = c;
+int get_temp_debug(void){
+    return temp_debug;
 }
 
 void init_tests(void){

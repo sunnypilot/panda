@@ -112,13 +112,13 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
     values = {"CR_Lkas_StrToqReq": torque, "CF_Lkas_ActToi": steer_req}
     return self.packer.make_can_msg_panda("LKAS11", 0, values)
 
-  def _scc_state_msg(self, enable):
+  def _acc_state_msg(self, enable):
     values = {"MainMode_ACC": enable, "AliveCounterACC": self.cnt_cruise % 16}
     self.__class__.cnt_cruise += 1
     return self.packer.make_can_msg_panda("SCC11", self.SCC_BUS, values)
 
-  def _lkas_button_msg(self):
-    values = {"LFA_Pressed": 1}
+  def _lkas_button_msg(self, enabled):
+    values = {"LFA_Pressed": enabled}
     return self.packer.make_can_msg_panda("BCM_PO_11", 0, values)
 
 
@@ -152,8 +152,8 @@ class TestHyundaiLegacySafety(TestHyundaiSafety):
     self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI_LEGACY, 0)
     self.safety.init_tests()
 
-  def test_lkas_button(self):
-    pass
+  def _test_lkas_button(self, mads_enabled):
+    raise unittest.SkipTest("LKA not available for Legacy platforms")
 
 
 class TestHyundaiLegacySafetyEV(TestHyundaiSafety):
@@ -167,8 +167,8 @@ class TestHyundaiLegacySafetyEV(TestHyundaiSafety):
     values = {"Accel_Pedal_Pos": gas}
     return self.packer.make_can_msg_panda("E_EMS11", 0, values, fix_checksum=checksum)
 
-  def test_lkas_button(self):
-    pass
+  def _test_lkas_button(self, mads_enabled):
+    raise unittest.SkipTest("LKA not available for Legacy platforms")
 
 
 class TestHyundaiLegacySafetyHEV(TestHyundaiSafety):
@@ -182,8 +182,8 @@ class TestHyundaiLegacySafetyHEV(TestHyundaiSafety):
     values = {"CR_Vcu_AccPedDep_Pos": gas}
     return self.packer.make_can_msg_panda("E_EMS11", 0, values, fix_checksum=checksum)
 
-  def test_lkas_button(self):
-    pass
+  def _test_lkas_button(self, mads_enabled):
+    raise unittest.SkipTest("LKA not available for Legacy platforms")
 
 
 class TestHyundaiLongitudinalSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
