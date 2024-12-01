@@ -248,10 +248,10 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
 }
 
 // Global system enable/disable
-void mads_set_system_state(bool enabled, bool disable_disengage_lateral_on_brake) {
+void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
     mads_state_init();
     _mads_state.system_enabled = enabled;
-    _mads_state.disengage_lateral_on_brake = !disable_disengage_lateral_on_brake;
+    _mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
 }
 
 // Check if lateral control is currently allowed by MADS
