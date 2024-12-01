@@ -113,9 +113,6 @@ uint16_t current_safety_param = 0;
 static const safety_hooks *current_hooks = &nooutput_hooks;
 safety_config current_safety_config;
 
-extern int lkas_button_prev;
-int lkas_button_prev = 0;
-
 static bool is_lat_active(void) {
   return controls_allowed || mads_is_lateral_control_allowed_by_mads();
 }
@@ -352,7 +349,7 @@ void generic_rx_checks(bool stock_ecu_detected) {
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
     relay_malfunction_set();
   }
-  mads_state_update(&vehicle_moving, cruise_button_prev, lkas_button_prev, brake_pressed || regen_braking, cruise_engaged_prev, acc_main_on);
+  mads_state_update(&vehicle_moving, brake_pressed || regen_braking, cruise_engaged_prev, acc_main_on);
 }
 
 static void relay_malfunction_reset(void) {
