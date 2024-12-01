@@ -54,6 +54,7 @@ typedef struct {
         int last;
         ButtonTransition transition;
         uint32_t press_timestamp;
+        bool is_engaged;
     } main_button;
 
     struct {
@@ -61,6 +62,7 @@ typedef struct {
         int last;
         ButtonTransition transition;
         uint32_t press_timestamp;
+        bool is_engaged;
     } lkas_button; // Rule 12.3: separate declarations
 
     // Vehicle condition states
@@ -84,15 +86,17 @@ typedef struct {
 static MADSState _mads_state; // Rule 8.4: static for internal linkage
 
 // Determine button transition
-static ButtonTransition _get_button_transition(bool current, bool last) {
+static ButtonTransition _get_button_transition(int current, int last) {
     ButtonTransition result = MADS_BUTTON_NO_CHANGE;
-    if (current && !last) {
-        result = MADS_BUTTON_PRESSED;
-    } else if (!current && last) {
-        result = MADS_BUTTON_RELEASED;
-    } else {
+    
+    if (current == BUTTON_UNINITIALIZED) {
         result = MADS_BUTTON_NO_CHANGE;
+    } else if (((last == BUTTON_UNINITIALIZED) && (current > 0)) || ((current > 0) && (last <= 0))) {
+        result = MADS_BUTTON_PRESSED;
+    } else {
+        result = ((current <= 0) && (last > 0)) ? MADS_BUTTON_RELEASED : MADS_BUTTON_NO_CHANGE;
     }
+    
     return result;
 }
 
@@ -107,13 +111,15 @@ static void mads_state_init(void) {
     _mads_state.disengage_lateral_on_brake = true;
 
     // Button state initialization
-    _mads_state.main_button.last = false;
+    _mads_state.main_button.last = BUTTON_UNINITIALIZED;
     _mads_state.main_button.transition = MADS_BUTTON_NO_CHANGE;
     _mads_state.main_button.press_timestamp = 0;
+    _mads_state.main_button.is_engaged = false;
 
-    _mads_state.lkas_button.last = false;
+    _mads_state.lkas_button.last = BUTTON_UNINITIALIZED;
     _mads_state.lkas_button.transition = MADS_BUTTON_NO_CHANGE;
     _mads_state.lkas_button.press_timestamp = 0;
+    _mads_state.lkas_button.is_engaged = false;
 
     // ACC main state initialization
     _mads_state.acc_main.current = false;
@@ -190,9 +196,20 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
             *_mads_state.main_button.current,
             _mads_state.main_button.last
         );
+        
+        // Engage on press, disengage on press if already pressed
+        if (_mads_state.main_button.transition == MADS_BUTTON_PRESSED) {
+            if (_mads_state.main_button.is_engaged) {
+                _mads_state.main_button.is_engaged = false;  // Disengage if already engaged
+            } else {
+                _mads_state.main_button.is_engaged = true;  // Engage otherwise
+            }
+        }
+
         _mads_state.main_button.last = *_mads_state.main_button.current;
     }
 
+    // Same for LKAS button
     if ((lkas_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) == 0u) {
         _mads_state.state_flags |= MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
     }
@@ -203,6 +220,15 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
             *_mads_state.lkas_button.current,
             _mads_state.lkas_button.last
         );
+
+        if (_mads_state.lkas_button.transition == MADS_BUTTON_PRESSED) {
+            if (_mads_state.lkas_button.is_engaged) {
+                _mads_state.lkas_button.is_engaged = false;
+            } else {
+                _mads_state.lkas_button.is_engaged = true;
+            }
+        }
+
         _mads_state.lkas_button.last = *_mads_state.lkas_button.current;
     }
 
@@ -213,8 +239,8 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
     // Update other states
     _mads_state.cruise_engaged = cruise_engaged;
 
-    // Allow lat when main or lkas button is pressed
-    _mads_state.controls_allowed_lat = (_mads_state.main_button.transition == MADS_BUTTON_PRESSED) || (_mads_state.lkas_button.transition == MADS_BUTTON_PRESSED);
+    // Use engagement state for lateral control
+    _mads_state.controls_allowed_lat = _mads_state.main_button.is_engaged || _mads_state.lkas_button.is_engaged;
 
     // Check ACC main state and braking conditions
     _mads_reset_acc_main(acc_main);
@@ -222,10 +248,10 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
 }
 
 // Global system enable/disable
-void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
+void mads_set_system_state(bool enabled, bool disable_disengage_lateral_on_brake) {
     mads_state_init();
     _mads_state.system_enabled = enabled;
-    _mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
+    _mads_state.disengage_lateral_on_brake = !disable_disengage_lateral_on_brake;
 }
 
 // Check if lateral control is currently allowed by MADS

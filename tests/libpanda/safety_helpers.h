@@ -225,6 +225,26 @@ void set_main_button_prev(int c){
   main_button_prev = c;
 }
 
+void set_controls_allowed_lat(bool c){
+  _mads_state.controls_allowed_lat = c;
+}
+
+bool get_main_button_engaged(void){
+  return _mads_state.main_button.is_engaged;
+}
+
+bool get_lkas_button_engaged(void){
+  return _mads_state.lkas_button.is_engaged;
+}
+
+void set_main_button_engaged(bool c){
+  _mads_state.main_button.is_engaged = c;
+}
+
+void set_lkas_button_engaged(bool c){
+  _mads_state.lkas_button.is_engaged = c;
+}
+
 void init_tests(void){
   // get HW_TYPE from env variable set in test.sh
   if (getenv("HW_TYPE")) {

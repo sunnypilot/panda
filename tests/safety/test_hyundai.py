@@ -127,6 +127,8 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
         self.safety.set_enable_mads(enable_mads, False)
         for main_button_msg_valid in (True, False):
           with self.subTest("main_button_msg_valid", state_valid=main_button_msg_valid):
+            self.safety.set_controls_allowed_lat(False)  # Cleanup before testing
+            self.safety.set_main_button_engaged(False)  # Cleanup before testing
             msg = self._button_msg(0, main_button_msg_valid)
             self._rx(msg)
             self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat(),
@@ -134,8 +136,10 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
                              f"main_button_prev: [{self.safety.get_main_button_prev()}] | " +
                              f"mads_state_flags: [{self.safety.get_mads_state_flags()}: {bin(self.safety.get_mads_state_flags())}] | " +
                              f"main_transition: [{self.safety.get_mads_main_button_transition()}], " +
-                             f"cur [{self.safety.get_mads_main_button_current()}], " +
-                             f"last [{self.safety.get_mads_main_button_last()}]"))
+                             f"cur [{self.safety.get_main_button_engaged()}], " +
+                             f"last [{self.safety.get_lkas_button_engaged()}]"))
+    self.safety.set_controls_allowed_lat(False)  # Cleanup after testing
+    self.safety.set_main_button_engaged(False)  # Cleanup after testing
 
 
 class TestHyundaiSafetyAltLimits(TestHyundaiSafety):

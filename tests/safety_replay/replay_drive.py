@@ -13,6 +13,7 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   err = safety.set_safety_hooks(safety_mode, param)
   assert err == 0, "invalid safety mode: %d" % safety_mode
   safety.set_alternative_experience(alternative_experience)
+  safety.set_enable_mads(bool(alternative_experience & 1024), bool(alternative_experience & 2048))
 
   if segment:
     init_segment(safety, lr, safety_mode, param)
@@ -68,6 +69,7 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   print("blocked msgs:", tx_blocked)
   print("blocked with controls allowed:", tx_controls_blocked)
   print("blocked addrs:", blocked_addrs)
+  print("Mads enabled:", safety.get_enable_mads())
 
   return tx_controls_blocked == 0 and rx_invalid == 0 and not safety_tick_rx_invalid
 
