@@ -1,7 +1,8 @@
+import unittest
 from abc import abstractmethod
 
 
-class MadsCommonBase:
+class MadsCommonBase(unittest.TestCase):
     @abstractmethod
     def _lkas_button_msg(self, enabled):
         raise NotImplementedError

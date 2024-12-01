@@ -40,7 +40,7 @@ bool get_lat_active(void){
 }
 
 bool get_controls_allowed_lat(void){
-  return _mads_state.controls_allowed_lat;
+  return mads_is_lateral_control_allowed_by_mads();
 }
 
 void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake){
@@ -199,6 +199,26 @@ void set_honda_fwd_brake(bool c){
 
 bool get_honda_fwd_brake(void){
   return honda_fwd_brake;
+}
+
+int get_main_button_prev(void){
+  return main_button_prev;
+}
+
+int get_mads_state_flags(void){
+  return _mads_state.state_flags; 
+}
+
+int get_mads_main_button_transition(void){
+  return _mads_state.main_button.transition;
+}
+
+int get_mads_main_button_current(void){
+    return *_mads_state.main_button.current;
+}
+
+int get_mads_main_button_last(void){
+    return _mads_state.main_button.last;
 }
 
 void init_tests(void){
