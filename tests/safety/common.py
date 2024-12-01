@@ -686,7 +686,7 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
             self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(angle_cmd, steer_control_enabled)))
 
 
-class PandaSafetyTest(PandaSafetyTestBase, MadsCommonBase):
+class PandaSafetyTest(PandaSafetyTestBase):
   TX_MSGS: list[list[int]] | None = None
   SCANNED_ADDRS = [*range(0x800),                      # Entire 11-bit CAN address space
                    *range(0x18DA00F1, 0x18DB00F1, 0x100),   # 29-bit UDS physical addressing
@@ -831,7 +831,7 @@ class PandaSafetyTest(PandaSafetyTestBase, MadsCommonBase):
 
 
 @add_regen_tests
-class PandaCarSafetyTest(PandaSafetyTest):
+class PandaCarSafetyTest(PandaSafetyTest, MadsCommonBase):
   STANDSTILL_THRESHOLD: float | None = None
   GAS_PRESSED_THRESHOLD = 0
   RELAY_MALFUNCTION_ADDRS: dict[int, tuple[int, ...]] | None = None
