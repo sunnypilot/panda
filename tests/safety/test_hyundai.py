@@ -129,7 +129,13 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
           with self.subTest("main_button_msg_valid", state_valid=main_button_msg_valid):
             msg = self._button_msg(0, main_button_msg_valid)
             self._rx(msg)
-            self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat(), f"msg: {hex(msg.addr)} | main_button_prev: [{self.safety.get_main_button_prev()}] | mads_state_flags: [{self.safety.get_mads_state_flags()}: {bin(self.safety.get_mads_state_flags())}] | main_transition: [{self.safety.get_mads_main_button_transition()}], cur [{self.safety.get_mads_main_button_current()}], last [{self.safety.get_mads_main_button_last()}]")
+            self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat(),
+                             (f"msg: {hex(msg.addr)} | " +
+                             f"main_button_prev: [{self.safety.get_main_button_prev()}] | " +
+                             f"mads_state_flags: [{self.safety.get_mads_state_flags()}: {bin(self.safety.get_mads_state_flags())}] | " +
+                             f"main_transition: [{self.safety.get_mads_main_button_transition()}], " +
+                             f"cur [{self.safety.get_mads_main_button_current()}], " +
+                             f"last [{self.safety.get_mads_main_button_last()}]"))
 
 
 class TestHyundaiSafetyAltLimits(TestHyundaiSafety):
