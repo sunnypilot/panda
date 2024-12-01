@@ -239,8 +239,12 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
     // Update other states
     _mads_state.cruise_engaged = cruise_engaged;
 
-    // Use engagement state for lateral control
-    _mads_state.controls_allowed_lat = _mads_state.main_button.is_engaged || _mads_state.lkas_button.is_engaged;
+    // Use engagement state for lateral control - prioritize LKAS button if available
+    if ((_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) != 0u) {
+        _mads_state.controls_allowed_lat = _mads_state.lkas_button.is_engaged;
+    } else {
+        _mads_state.controls_allowed_lat = _mads_state.main_button.is_engaged || _mads_state.lkas_button.is_engaged;
+    }
 
     // Check ACC main state and braking conditions
     _mads_reset_acc_main(acc_main);

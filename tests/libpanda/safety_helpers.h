@@ -225,6 +225,10 @@ void set_main_button_prev(int c){
   main_button_prev = c;
 }
 
+void set_lkas_button_prev(int c){
+  lkas_button_prev = c;
+}
+
 void set_controls_allowed_lat(bool c){
   _mads_state.controls_allowed_lat = c;
 }

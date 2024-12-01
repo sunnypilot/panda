@@ -18,6 +18,7 @@ class MadsCommonBase(unittest.TestCase):
                 for main_button_prev in (-1, 0, 1):
                     with self.subTest("main_button_prev", button_state=main_button_prev):
                         self.safety.set_main_button_prev(main_button_prev)
+                        self.safety.set_lkas_button_prev(-1) # Force to not have LKAS
                         self._rx(self._user_brake_msg(False))
                         self.assertEqual(enable_mads and main_button_prev == 1, self.safety.get_controls_allowed_lat(),
                                          (f"main_button_prev: [{self.safety.get_main_button_prev()}] | " +

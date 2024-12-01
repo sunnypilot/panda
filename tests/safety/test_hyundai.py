@@ -137,8 +137,8 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
                              f"main_button_prev: [{self.safety.get_main_button_prev()}] | " +
                              f"mads_state_flags: [{self.safety.get_mads_state_flags()}: {bin(self.safety.get_mads_state_flags())}] | " +
                              f"main_transition: [{self.safety.get_mads_main_button_transition()}], " +
-                             f"cur [{self.safety.get_main_button_engaged()}], " +
-                             f"last [{self.safety.get_lkas_button_engaged()}]"))
+                             f"main [{self.safety.get_main_button_engaged()}], " +
+                             f"lkas [{self.safety.get_lkas_button_engaged()}]"))
     self.safety.set_main_button_prev(-1)
     self.safety.set_controls_allowed_lat(False)  # Cleanup after testing
     self.safety.set_main_button_engaged(False)  # Cleanup after testing
