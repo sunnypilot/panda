@@ -138,7 +138,7 @@ static void _mads_exit_controls(void) {
 // Resume lateral controls
 static void _mads_resume_controls(void) {
     if (_mads_state.disengaged_from_brakes) {
-        _mads_state.controls_allowed_lat = controls_allowed;
+        _mads_state.controls_allowed_lat = true;
         _mads_state.disengaged_from_brakes = false;
     }
 }
@@ -162,12 +162,8 @@ static void _mads_reset_acc_main(bool acc_main_tx) {
 // Check braking condition
 static void _mads_check_braking(bool is_braking) {
     bool was_braking = _mads_state.is_braking;
-    if (is_braking && (!was_braking || *_mads_state.is_vehicle_moving_ptr)) {
-        _mads_state.controls_allowed_lat = false;
-
-        if (_mads_state.disengage_lateral_on_brake) {
-            _mads_exit_controls();
-        }
+    if (is_braking && (!was_braking || *_mads_state.is_vehicle_moving_ptr) && _mads_state.disengage_lateral_on_brake) {
+        _mads_exit_controls();
     }
 
     if (!is_braking && _mads_state.disengage_lateral_on_brake) {
