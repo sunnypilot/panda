@@ -121,6 +121,16 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
     values = {"LFA_Pressed": enabled}
     return self.packer.make_can_msg_panda("BCM_PO_11", 0, values)
 
+  def test_enable_control_from_main(self):
+    for enable_mads in (True, False):
+      with self.subTest("enable_mads", mads_enabled=enable_mads):
+        self.safety.set_enable_mads(enable_mads, False)
+        for main_button_msg_valid in (True, False):
+          with self.subTest("main_button_msg_valid", state_valid=main_button_msg_valid):
+            msg = self._button_msg(0, main_button_msg_valid)
+            self._rx(msg)
+            self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat(), f"msg: {hex(msg.addr)} | main_button_prev: [{self.safety.get_main_button_prev()}] | mads_state_flags: [{self.safety.get_mads_state_flags()}: {bin(self.safety.get_mads_state_flags())}] | main_transition: [{self.safety.get_mads_main_button_transition()}], cur [{self.safety.get_mads_main_button_current()}], last [{self.safety.get_mads_main_button_last()}]")
+
 
 class TestHyundaiSafetyAltLimits(TestHyundaiSafety):
   MAX_RATE_UP = 2
