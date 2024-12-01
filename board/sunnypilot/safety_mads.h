@@ -86,15 +86,13 @@ typedef struct {
 static MADSState _mads_state; // Rule 8.4: static for internal linkage
 
 // Determine button transition
-static ButtonTransition _get_button_transition(int current, int last) {
+static ButtonTransition _get_button_transition(bool current, bool last) {
     ButtonTransition result = MADS_BUTTON_NO_CHANGE;
     
-    if (current == BUTTON_UNINITIALIZED) {
-        result = MADS_BUTTON_NO_CHANGE;
-    } else if (((last == BUTTON_UNINITIALIZED) && (current > 0)) || ((current > 0) && (last <= 0))) {
+    if (current && !last) {
         result = MADS_BUTTON_PRESSED;
-    } else {
-        result = ((current <= 0) && (last > 0)) ? MADS_BUTTON_RELEASED : MADS_BUTTON_NO_CHANGE;
+    } else if (!current && last) {
+        result = MADS_BUTTON_RELEASED;
     }
     
     return result;
@@ -193,8 +191,8 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
     if ((_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) != 0u) {
         _mads_state.main_button.current = &main_button_prev;
         _mads_state.main_button.transition = _get_button_transition(
-            *_mads_state.main_button.current,
-            _mads_state.main_button.last
+            *_mads_state.main_button.current > 0,
+            _mads_state.main_button.last > 0
         );
         
         // Engage on press, disengage on press if already pressed
@@ -217,8 +215,8 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
     if ((_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) != 0u) {
         _mads_state.lkas_button.current = &lkas_button_prev;
         _mads_state.lkas_button.transition = _get_button_transition(
-            *_mads_state.lkas_button.current,
-            _mads_state.lkas_button.last
+            *_mads_state.lkas_button.current > 0,
+            _mads_state.lkas_button.last > 0
         );
 
         if (_mads_state.lkas_button.transition == MADS_BUTTON_PRESSED) {
