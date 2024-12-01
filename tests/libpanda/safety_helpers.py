@@ -67,9 +67,8 @@ def setup_safety_helpers(ffi):
 
   bool get_main_button_engaged(void);
   bool get_lkas_button_engaged(void);
-  
-    void set_main_button_engaged(bool engaged);
-    void set_lkas_button_engaged(bool engaged);
+  void set_main_button_engaged(bool engaged);
+  void set_lkas_button_engaged(bool engaged);
   """)
 
 class PandaSafety(Protocol):
