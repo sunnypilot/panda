@@ -93,6 +93,8 @@ static ButtonTransition _get_button_transition(bool current, bool last) {
         result = MADS_BUTTON_PRESSED;
     } else if (!current && last) {
         result = MADS_BUTTON_RELEASED;
+    } else {
+        result = MADS_BUTTON_NO_CHANGE;
     }
     
     return result;
