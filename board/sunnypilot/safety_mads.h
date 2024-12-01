@@ -23,8 +23,9 @@ int lkas_button_prev = BUTTON_UNINITIALIZED;
 
 #define MISMATCH_DEFAULT_THRESHOLD 25
 #define MADS_STATE_FLAG_DEFAULT 0U
-#define MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE 1U
-#define MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE 2U
+#define MADS_STATE_FLAG_RESERVED 1U
+#define MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE 2U
+#define MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE 4U
 
 
 // Button transition types
@@ -178,14 +179,9 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
         _mads_state.is_vehicle_moving_ptr = op_vehicle_moving;
     }
 
-    if ((main_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) != 0u) {
+    if ((main_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) == 0u) {
         _mads_state.main_button.current = &main_button_prev;
         _mads_state.state_flags |= MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE;
-    }
-
-    if ((lkas_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) != 0u) {
-        _mads_state.lkas_button.current = &lkas_button_prev;
-        _mads_state.state_flags |= MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
     }
 
     // Update button states
@@ -203,6 +199,11 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
         }
     }
 
+    if ((lkas_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) == 0u) {
+        _mads_state.lkas_button.current = &lkas_button_prev;
+        _mads_state.state_flags |= MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
+    }
+    
     if ((_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) != 0u) {
         _mads_state.lkas_button.last = *_mads_state.lkas_button.current;
         _mads_state.lkas_button.current = &lkas_button_prev;
