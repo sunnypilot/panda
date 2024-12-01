@@ -214,7 +214,7 @@ int get_mads_main_button_transition(void){
 }
 
 int get_mads_main_button_current(void){
-    return _mads_state.main_button.current != NULL ? *_mads_state.main_button.current : -1;
+    return *_mads_state.main_button.current;
 }
 
 int get_mads_main_button_last(void){

@@ -180,7 +180,6 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
     }
 
     if ((main_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) == 0u) {
-        _mads_state.main_button.current = &main_button_prev;
         _mads_state.state_flags |= MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE;
     }
 
@@ -191,16 +190,10 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
             *_mads_state.main_button.current,
             _mads_state.main_button.last
         );
-
-        // Track button press timestamps
-        if (_mads_state.main_button.transition == MADS_BUTTON_PRESSED) {
-            _mads_state.main_button.press_timestamp = microsecond_timer_get();
-        }
         _mads_state.main_button.last = *_mads_state.main_button.current;
     }
 
     if ((lkas_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) == 0u) {
-        _mads_state.lkas_button.current = &lkas_button_prev;
         _mads_state.state_flags |= MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
     }
 
@@ -210,11 +203,6 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
             *_mads_state.lkas_button.current,
             _mads_state.lkas_button.last
         );
-
-        // Track button press timestamps
-        if (_mads_state.lkas_button.transition == MADS_BUTTON_PRESSED) {
-            _mads_state.lkas_button.press_timestamp = microsecond_timer_get();
-        }
         _mads_state.lkas_button.last = *_mads_state.lkas_button.current;
     }
 
