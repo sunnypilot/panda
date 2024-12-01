@@ -221,6 +221,10 @@ int get_mads_main_button_last(void){
     return _mads_state.main_button.last;
 }
 
+void set_main_button_prev(int c){
+  main_button_prev = c;
+}
+
 void init_tests(void){
   // get HW_TYPE from env variable set in test.sh
   if (getenv("HW_TYPE")) {

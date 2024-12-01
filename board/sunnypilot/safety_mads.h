@@ -99,8 +99,8 @@ static ButtonTransition _get_button_transition(bool current, bool last) {
 // Initialize the MADS state
 static void mads_state_init(void) {
     _mads_state.is_vehicle_moving_ptr = NULL;
-    _mads_state.main_button.current = NULL;
-    _mads_state.lkas_button.current = NULL;
+    _mads_state.main_button.current = &main_button_prev;
+    _mads_state.lkas_button.current = &lkas_button_prev;
     _mads_state.state_flags = MADS_STATE_FLAG_DEFAULT;
 
     _mads_state.system_enabled = false;
@@ -180,13 +180,11 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
     }
 
     if ((main_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) == 0u) {
-        _mads_state.main_button.current = &main_button_prev;
         _mads_state.state_flags |= MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE;
     }
 
     // Update button states
     if ((_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) != 0u) {
-        _mads_state.main_button.current = &main_button_prev;
         _mads_state.main_button.transition = _get_button_transition(
             *_mads_state.main_button.current,
             _mads_state.main_button.last
