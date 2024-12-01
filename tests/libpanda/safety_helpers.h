@@ -35,8 +35,12 @@ bool get_controls_allowed(void){
   return controls_allowed;
 }
 
-bool get_controls_allowed_lat(void){
+bool get_lat_active(void){
   return is_lat_active();
+}
+
+bool get_controls_allowed_lat(void){
+  return _mads_state.controls_allowed_lat;
 }
 
 void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake){

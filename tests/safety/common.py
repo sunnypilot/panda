@@ -743,7 +743,7 @@ class PandaSafetyTest(PandaSafetyTestBase, MadsCommonBase):
         for controls_allowed in [True, False]:
           with self.subTest("controls allowed", controls_allowed=controls_allowed):
             self.safety.set_controls_allowed(controls_allowed)
-            self.assertEqual(self.safety.get_controls_allowed(), self.safety.get_controls_allowed_lat())
+            self.assertEqual(self.safety.get_controls_allowed(), self.safety.get_lat_active())
 
   def test_mads_disengage_lat_on_brake_setup(self):
     for mads_enabled in [True, False]:

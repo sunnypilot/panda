@@ -17,7 +17,7 @@ static int get_health_pkt(void *dat) {
   health->ignition_can_pkt = ignition_can;
 
   health->controls_allowed_pkt = controls_allowed;
-  health->controls_allowed_lat_pkt = is_lat_active();
+  health->controls_allowed_lat_pkt = _mads_state.controls_allowed_lat;
   health->safety_tx_blocked_pkt = safety_tx_blocked;
   health->safety_rx_invalid_pkt = safety_rx_invalid;
   health->tx_buffer_overflow_pkt = tx_buffer_overflow;
