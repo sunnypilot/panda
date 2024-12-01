@@ -68,11 +68,11 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
       if (addr == 0x1cf) {
         cruise_button = GET_BYTE(to_push, 2) & 0x7U;
         main_button = GET_BIT(to_push, 19U);
-        lkas_button_prev = GET_BIT(to_push, 23U);
+        lkas_button_prev = GET_BIT(to_push, 23U) ? 1 : 0;
       } else {
         cruise_button = (GET_BYTE(to_push, 4) >> 4) & 0x7U;
         main_button = GET_BIT(to_push, 34U);
-        lkas_button_prev = GET_BIT(to_push, 39U);
+        lkas_button_prev = GET_BIT(to_push, 39U) ? 1 : 0;
       }
       hyundai_common_cruise_buttons_check(cruise_button, main_button);
     }
