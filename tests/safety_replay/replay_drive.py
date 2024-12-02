@@ -45,7 +45,11 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
           blocked_addrs[canmsg.address] += 1
 
           if "DEBUG" in os.environ:
-            print("blocked bus %d msg %d at %f" % (canmsg.src, canmsg.address, (msg.logMonoTime - start_t) / 1e9))
+            print(f"blocked bus {canmsg.src} msg {hex(canmsg.address)} at {(msg.logMonoTime - start_t) / 1e9} | " +
+                  f"lat [{safety.get_lat_active()}] | alwd [{safety.get_controls_allowed_lat()}] | " +
+                  f"main_on [{safety.get_acc_main_on()}] | " +
+                  f"flags [{safety.get_mads_state_flags()}] | " +
+                  f"mads_main [{safety.get_mads_acc_main()}] ")
         tx_controls += safety.get_controls_allowed()
         tx_tot += 1
     elif msg.which() == 'can':
