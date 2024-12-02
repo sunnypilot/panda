@@ -66,7 +66,7 @@ class MadsCommonBase(unittest.TestCase):
                         self._mads_states_cleanup()
                         self.safety.set_acc_main_on(acc_main_on)
                         self._rx(self._user_brake_msg(False))
-                        self.assertEqual(enable_mads and acc_main_on, self.safety.get_controls_allowed_lat(), f"mads_acc_main: {self.safety.get_mads_acc_main()}")
+                        self.assertEqual(enable_mads and acc_main_on, self.safety.get_controls_allowed_lat())
         self._mads_states_cleanup()
 
     def test_controls_allowed_must_always_enable_lat(self):
