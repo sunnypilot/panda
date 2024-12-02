@@ -205,6 +205,10 @@ int get_main_button_prev(void){
   return main_button_prev;
 }
 
+void set_mads_state_flags(int flags){
+  _mads_state.state_flags = flags;
+}
+
 int get_mads_state_flags(void){
   return _mads_state.state_flags; 
 }

@@ -185,12 +185,9 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
         _mads_state.is_vehicle_moving_ptr = op_vehicle_moving;
     }
 
-    if ((main_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) == 0u) {
-        _mads_state.state_flags |= MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE;
-    }
-
     // Update button states
-    if ((_mads_state.state_flags & MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE) != 0u) {
+    if (main_button_prev != BUTTON_UNINITIALIZED) {
+        _mads_state.state_flags |= MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE;
         _mads_state.main_button.current = &main_button_prev;
         _mads_state.main_button.transition = _get_button_transition(
             *_mads_state.main_button.current > 0,
@@ -207,17 +204,11 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
         }
 
         _mads_state.main_button.last = *_mads_state.main_button.current;
-    } else {
-        _mads_state.state_flags &= ~MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE;
-        main_button_prev = BUTTON_UNINITIALIZED;
     }
 
     // Same for LKAS button
-    if ((lkas_button_prev != BUTTON_UNINITIALIZED) && (_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) == 0u) {
+    if (lkas_button_prev != BUTTON_UNINITIALIZED) {
         _mads_state.state_flags |= MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
-    }
-
-    if ((_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) != 0u) {
         _mads_state.lkas_button.current = &lkas_button_prev;
         _mads_state.lkas_button.transition = _get_button_transition(
             *_mads_state.lkas_button.current > 0,
@@ -233,9 +224,6 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
         }
 
         _mads_state.lkas_button.last = *_mads_state.lkas_button.current;
-    } else {
-        _mads_state.state_flags &= ~MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
-        lkas_button_prev = BUTTON_UNINITIALIZED;
     }
 
     // Update ACC main state
@@ -246,7 +234,7 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
     _mads_state.cruise_engaged = cruise_engaged;
 
     // Use engagement state for lateral control - prioritize LKAS button if available
-    if ((_mads_state.state_flags & MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE) != 0u) {
+    if (lkas_button_prev != BUTTON_UNINITIALIZED) {
         _mads_state.controls_allowed_lat = _mads_state.lkas_button.is_engaged;
     } else {
         _mads_state.controls_allowed_lat = _mads_state.main_button.is_engaged || _mads_state.lkas_button.is_engaged;
