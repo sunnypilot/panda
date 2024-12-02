@@ -205,8 +205,8 @@ bool get_honda_fwd_brake(void){
   return honda_fwd_brake;
 }
 
-int get_main_button_prev(void){
-  return main_button_prev;
+int get_main_button_press(void){
+  return main_button_press;
 }
 
 void set_mads_state_flags(int flags){
@@ -229,12 +229,12 @@ int get_mads_main_button_last(void){
     return _mads_state.main_button.last;
 }
 
-void set_main_button_prev(int c){
-  main_button_prev = c;
+void set_main_button_press(int c){
+  main_button_press = c;
 }
 
-void set_lkas_button_prev(int c){
-  lkas_button_prev = c;
+void set_lkas_button_press(int c){
+  lkas_button_press = c;
 }
 
 void set_controls_allowed_lat(bool c){
