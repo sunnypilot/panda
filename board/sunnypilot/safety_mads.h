@@ -75,7 +75,7 @@ typedef struct {
 
     // ACC main state tracking
     struct {
-        bool current;
+        const bool * current;
         bool previous;
         uint32_t mismatch_count;
         uint32_t mismatch_threshold;
@@ -103,6 +103,7 @@ static ButtonTransition _get_button_transition(bool current, bool last) {
 // Initialize the MADS state
 static void mads_state_init(void) {
     _mads_state.is_vehicle_moving_ptr = NULL;
+    _mads_state.acc_main.current = NULL;
     _mads_state.main_button.current = &main_button_prev;
     _mads_state.lkas_button.current = &lkas_button_prev;
     _mads_state.state_flags = MADS_STATE_FLAG_DEFAULT;
@@ -122,7 +123,6 @@ static void mads_state_init(void) {
     _mads_state.lkas_button.is_engaged = false;
 
     // ACC main state initialization
-    _mads_state.acc_main.current = false;
     _mads_state.acc_main.previous = false;
     _mads_state.acc_main.mismatch_count = 0;
     _mads_state.acc_main.mismatch_threshold = MISMATCH_DEFAULT_THRESHOLD;
@@ -150,21 +150,21 @@ static void _mads_resume_controls(void) {
     }
 }
 
-// Reset ACC main state with mismatch handling
-static void _mads_reset_acc_main(bool acc_main_tx) {
-    if (_mads_state.acc_main.current && !acc_main_tx) {
-        _mads_state.acc_main.mismatch_count++;
-
-        if (_mads_state.acc_main.mismatch_count >= _mads_state.acc_main.mismatch_threshold) {
-            _mads_state.acc_main.current = acc_main_tx;
-
-            // Update lateral control based on ACC main state
-            _mads_state.controls_allowed_lat = false;
-        }
-    } else {
-        _mads_state.acc_main.mismatch_count = 0;
-    }
-}
+// // Reset ACC main state with mismatch handling
+// static void _mads_reset_acc_main(bool acc_main_tx) {
+//     if (_mads_state.acc_main.current && !acc_main_tx) {
+//         _mads_state.acc_main.mismatch_count++;
+//
+//         if (_mads_state.acc_main.mismatch_count >= _mads_state.acc_main.mismatch_threshold) {
+//             _mads_state.acc_main.current = acc_main_tx;
+//
+//             // Update lateral control based on ACC main state
+//             _mads_state.controls_allowed_lat = false;
+//         }
+//     } else {
+//         _mads_state.acc_main.mismatch_count = 0;
+//     }
+// }
 
 // Check braking condition
 static void _mads_check_braking(bool is_braking) {
@@ -180,9 +180,13 @@ static void _mads_check_braking(bool is_braking) {
 }
 
 // Update state based on input conditions
-void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool cruise_engaged, bool acc_main) {
+void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, bool is_braking, bool cruise_engaged) {
     if (_mads_state.is_vehicle_moving_ptr == NULL) {
         _mads_state.is_vehicle_moving_ptr = op_vehicle_moving;
+    }
+
+    if (_mads_state.acc_main.current == NULL) {
+        _mads_state.acc_main.current = op_acc_main;
     }
 
     // Update button states
@@ -226,10 +230,6 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
         _mads_state.lkas_button.last = *_mads_state.lkas_button.current;
     }
 
-    // Update ACC main state
-    _mads_state.acc_main.previous = _mads_state.acc_main.current;
-    _mads_state.acc_main.current = acc_main;
-
     // Update other states
     _mads_state.cruise_engaged = cruise_engaged;
 
@@ -240,9 +240,14 @@ void mads_state_update(const bool *op_vehicle_moving, bool is_braking, bool crui
         _mads_state.controls_allowed_lat = _mads_state.main_button.is_engaged || _mads_state.lkas_button.is_engaged;
     }
 
+    _mads_state.controls_allowed_lat = _mads_state.controls_allowed_lat || *_mads_state.acc_main.current;
+
     // Check ACC main state and braking conditions
-    _mads_reset_acc_main(acc_main);
+    // _mads_reset_acc_main(acc_main);
     _mads_check_braking(is_braking);
+
+    // Update ACC main state
+    _mads_state.acc_main.previous = *_mads_state.acc_main.current;
 }
 
 // Global system enable/disable

@@ -95,6 +95,10 @@ bool get_acc_main_on(void){
   return acc_main_on;
 }
 
+void set_acc_main_on(bool c){
+  acc_main_on = c;
+}
+
 int get_vehicle_speed_min(void){
   return vehicle_speed.min;
 }
@@ -251,6 +255,10 @@ void set_main_button_engaged(bool c){
 
 void set_lkas_button_engaged(bool c){
   _mads_state.lkas_button.is_engaged = c;
+}
+
+int get_mads_acc_main(void){
+  return _mads_state.acc_main.current != NULL ? *_mads_state.acc_main.current : false;
 }
 
 void init_tests(void){
