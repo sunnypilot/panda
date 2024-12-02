@@ -132,29 +132,20 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
             self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
-  def _test_acc_main_state_from_message(self, LONG_FLAG=Panda.FLAG_HYUNDAI_LONG):
+  def test_acc_main_state_from_message(self):
     """Test that ACC main state is correctly set when receiving 0x420 message, toggling HYUNDAI_LONG flag"""
     prior_safety_mode = self.safety.get_current_safety_mode()
     prior_safety_param = self.safety.get_current_safety_param()
 
     for hyundai_longitudinal in (True, False):
       with self.subTest("hyundai_longitudinal", hyundai_longitudinal=hyundai_longitudinal):
-        self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, 0 if hyundai_longitudinal else LONG_FLAG)
-        for acc_main_on in (True, False):
-          with self.subTest("acc_main_on", acc_main_on=acc_main_on):
-            self._mads_states_cleanup()
-            # Send the ACC state message
-            self._rx(self._acc_state_msg(acc_main_on))
-            # ACC main should only be set if hyundai_longitudinal is True
-            expected_acc_main = acc_main_on and hyundai_longitudinal
+        self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, 0 if hyundai_longitudinal else Panda.FLAG_HYUNDAI_LONG)
+        for should_turn_acc_main_on in (True, False):
+          with self.subTest("acc_main_on", should_turn_acc_main_on=should_turn_acc_main_on):
+            self._rx(self._acc_state_msg(should_turn_acc_main_on))  # Send the ACC state message
+            expected_acc_main = should_turn_acc_main_on and hyundai_longitudinal  # ACC main should only be set if hyundai_longitudinal is True
             self.assertEqual(expected_acc_main, self.safety.get_acc_main_on())
-
-    # Restore original safety mode and param
     self.safety.set_safety_hooks(prior_safety_mode, prior_safety_param)
-    self._mads_states_cleanup()
-
-  def test_acc_main_state_from_message(self):
-    self._test_acc_main_state_from_message()
 
 
 class TestHyundaiSafetyAltLimits(TestHyundaiSafety):
@@ -179,10 +170,20 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
     self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, Panda.FLAG_HYUNDAI_CAMERA_SCC)
     self.safety.init_tests()
 
-  # TODO-SP: Validate Camera SCC flow, currently failing inverted
   def test_acc_main_state_from_message(self):
-    pass
-    # self._test_acc_main_state_from_message(Panda.FLAG_HYUNDAI_CAMERA_SCC)
+    """
+    Test that ACC main state is correctly set when receiving 0x420 message.
+    For camera SCC, ACC main should always be on when receiving 0x420 message
+    """
+    prior_safety_mode = self.safety.get_current_safety_mode()
+    prior_safety_param = self.safety.get_current_safety_param()
+
+    for should_turn_acc_main_on in (True, False):
+      with self.subTest("acc_main_on", should_turn_acc_main_on=should_turn_acc_main_on):
+        self._rx(self._acc_state_msg(should_turn_acc_main_on))
+        self.assertEqual(should_turn_acc_main_on, self.safety.get_acc_main_on())
+    # Restore original safety mode and param
+    self.safety.set_safety_hooks(prior_safety_mode, prior_safety_param)
 
 
 class TestHyundaiLegacySafety(TestHyundaiSafety):
