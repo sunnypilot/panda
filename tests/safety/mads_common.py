@@ -71,4 +71,76 @@ class MadsCommonBase(unittest.TestCase):
                         self.safety.set_enable_mads(mads_enabled, disengage_on_brake)
                         self.assertEqual(disengage_on_brake, self.safety.get_disengage_lat_on_brake())
 
+    def test_mads_state_flags_mutation(self):
+        """Test to catch mutations in bitwise operations for state flags.
+        Specifically targets the mutation of & to | in flag checking operations."""
 
+        # Test both MADS enabled and disabled states
+        for enable_mads in (True, False):
+            with self.subTest("enable_mads", mads_enabled=enable_mads):
+                self.safety.set_enable_mads(enable_mads, False)
+                self._mads_states_cleanup()
+
+                # Initial state - both flags should be unset
+                self._rx(self._user_brake_msg(False))
+                initial_flags = self.safety.get_mads_state_flags()
+                self.assertEqual(initial_flags & 2, 0)  # Main button flag
+                self.assertEqual(initial_flags & 4, 0)  # LKAS button flag
+
+                # Set only main button
+                self.safety.set_main_button_prev(0)
+                self._rx(self._user_brake_msg(False))
+                main_only_flags = self.safety.get_mads_state_flags()
+                self.assertEqual(main_only_flags & 2, 2)  # Main button flag should be set
+                self.assertEqual(main_only_flags & 4, 0)  # LKAS button flag should still be unset
+
+                # Add LKAS button
+                self.safety.set_lkas_button_prev(0)
+                self._rx(self._user_brake_msg(False))
+                both_flags = self.safety.get_mads_state_flags()
+                self.assertEqual(both_flags & 2, 2)  # Main button flag should remain set
+                self.assertEqual(both_flags & 4, 4)  # LKAS button flag should be set
+
+                # Verify that using | instead of & would give different results
+                # This helps catch the mutation
+                self.assertNotEqual(both_flags & 2, both_flags | 2)
+                self.assertNotEqual(both_flags & 4, both_flags | 4)
+
+                # Reset buttons to -1, but flags should remain set
+                self._mads_states_cleanup()
+                self._rx(self._user_brake_msg(False))
+                final_flags = self.safety.get_mads_state_flags()
+                self.assertEqual(final_flags & 2, 2)  # Main button flag should still be set
+                self.assertEqual(final_flags & 4, 4)  # LKAS button flag should still be set
+
+    def test_mads_state_flags_persistence(self):
+        """Test to verify that state flags remain set once buttons are seen"""
+
+        for enable_mads in (True, False):
+            with self.subTest("enable_mads", mads_enabled=enable_mads):
+                self.safety.set_enable_mads(enable_mads, False)
+                self._mads_states_cleanup()
+
+                # Set main button and verify flag
+                self.safety.set_main_button_prev(0)
+                self._rx(self._user_brake_msg(False))
+                self.assertEqual(self.safety.get_mads_state_flags() & 2, 2)
+
+                # Reset main button to -1, flag should persist
+                self.safety.set_main_button_prev(-1)
+                self._rx(self._user_brake_msg(False))
+                self.assertEqual(self.safety.get_mads_state_flags() & 2, 2)
+
+                # Set LKAS button and verify both flags
+                self.safety.set_lkas_button_prev(0)
+                self._rx(self._user_brake_msg(False))
+                flags = self.safety.get_mads_state_flags()
+                self.assertEqual(flags & 2, 2)
+                self.assertEqual(flags & 4, 4)
+
+                # Reset both buttons to -1, flags should remain
+                self._mads_states_cleanup()
+                self._rx(self._user_brake_msg(False))
+                final_flags = self.safety.get_mads_state_flags()
+                self.assertEqual(final_flags & 2, 2)
+                self.assertEqual(final_flags & 4, 4)
