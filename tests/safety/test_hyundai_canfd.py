@@ -86,33 +86,16 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
     values = {"LKAS_BTN": enabled}
     return self.packer.make_can_msg_panda("CRUISE_BUTTONS", self.PT_BUS, values)
 
-  #TODO-SP: Is this true?
-  def _test_enable_lateral_control_via_acc_state(self, mads_enabled, valid_mads_engage, expected_enabled):
-    raise unittest.SkipTest("HDA platforms have LFA buttons, so we don't use ACC state for lateral control.")
-
   def test_enable_control_from_lkas(self):
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
         self.safety.set_enable_mads(enable_mads, False)
         for lkas_button_msg_valid in (True, False):
           with self.subTest("main_button_msg_valid", state_valid=lkas_button_msg_valid):
-            self.safety.set_lkas_button_prev(-1)
-            self.safety.set_controls_allowed_lat(False)  # Cleanup before testing
-            self.safety.set_main_button_engaged(False)  # Cleanup before testing
-            self.safety.set_lkas_button_engaged(False)  # Cleanup before testing
-            msg = self._lkas_button_msg(lkas_button_msg_valid)
-            self._rx(msg)
-            self.assertEqual(enable_mads and lkas_button_msg_valid, self.safety.get_controls_allowed_lat(),
-                             (f"msg: {hex(msg.addr)} | " +
-                              f"main_button_prev: [{self.safety.get_main_button_prev()}] | " +
-                              f"mads_state_flags: [{self.safety.get_mads_state_flags()}: {bin(self.safety.get_mads_state_flags())}] | " +
-                              f"main_transition: [{self.safety.get_mads_main_button_transition()}], " +
-                              f"main [{self.safety.get_main_button_engaged()}], " +
-                              f"lkas [{self.safety.get_lkas_button_engaged()}]"))
-    self.safety.set_main_button_prev(-1)
-    self.safety.set_controls_allowed_lat(False)  # Cleanup after testing
-    self.safety.set_main_button_engaged(False)  # Cleanup after testing
-    self.safety.set_lkas_button_engaged(False)  # Cleanup before testing
+            self._mads_states_cleanup()
+            self._rx(self._lkas_button_msg(lkas_button_msg_valid))
+            self.assertEqual(enable_mads and lkas_button_msg_valid, self.safety.get_controls_allowed_lat())
+    self._mads_states_cleanup()
 
 
 class TestHyundaiCanfdHDA1Base(TestHyundaiCanfdBase):

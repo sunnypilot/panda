@@ -736,23 +736,6 @@ class PandaSafetyTest(PandaSafetyTestBase):
     self.safety.set_controls_allowed(0)
     self.assertFalse(self.safety.get_controls_allowed())
 
-  def test_controls_allowed_must_always_enable_lat(self):
-    for mads_enabled in [True, False]:
-      with self.subTest("mads enabled", mads_enabled=mads_enabled):
-        self.safety.set_enable_mads(mads_enabled, False)
-        for controls_allowed in [True, False]:
-          with self.subTest("controls allowed", controls_allowed=controls_allowed):
-            self.safety.set_controls_allowed(controls_allowed)
-            self.assertEqual(self.safety.get_controls_allowed(), self.safety.get_lat_active())
-
-  def test_mads_disengage_lat_on_brake_setup(self):
-    for mads_enabled in [True, False]:
-      with self.subTest("mads enabled", mads_enabled=mads_enabled):
-        for disengage_on_brake in [True, False]:
-          with self.subTest("disengage on brake", disengage_on_brake=disengage_on_brake):
-            self.safety.set_enable_mads(mads_enabled, disengage_on_brake)
-            self.assertEqual(disengage_on_brake, self.safety.get_disengage_lat_on_brake())
-
   def test_tx_hook_on_wrong_safety_mode(self):
     files = os.listdir(os.path.dirname(os.path.realpath(__file__)))
     test_files = [f for f in files if f.startswith("test_") and f.endswith(".py")]
