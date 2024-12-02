@@ -147,9 +147,7 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
             self._rx(self._acc_state_msg(acc_main_on))
             # ACC main should only be set if hyundai_longitudinal is True
             expected_acc_main = acc_main_on and hyundai_longitudinal
-            self.assertEqual(expected_acc_main, self.safety.get_acc_main_on(),
-                             f"ACC main state mismatch when hyundai_longitudinal={hyundai_longitudinal}, "
-                             f"acc_main_on={acc_main_on}")
+            self.assertEqual(expected_acc_main, self.safety.get_acc_main_on())
 
     # Restore original safety mode and param
     self.safety.set_safety_hooks(prior_safety_mode, prior_safety_param)

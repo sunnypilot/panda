@@ -258,7 +258,7 @@ void set_lkas_button_engaged(bool c){
 }
 
 int get_mads_acc_main(void){
-  return _mads_state.acc_main.current != NULL ? *_mads_state.acc_main.current : false;
+  return *_mads_state.acc_main.current;
 }
 
 void init_tests(void){
