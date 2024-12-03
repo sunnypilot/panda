@@ -114,6 +114,7 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
   // 0x1A6 for the ILX, 0x296 for the Civic Touring
   if (((addr == 0x1A6) || (addr == 0x296)) && (bus == pt_bus)) {
     int button = (GET_BYTE(to_push, 0) & 0xE0U) >> 5;
+    lkas_button_press = ((GET_BYTE(to_push, (addr == 0x296) ? 0 : 5) & 0x0CU) >> 2) == 1;
 
     // enter controls on the falling edge of set or resume
     bool set = (button != HONDA_BTN_SET) && (cruise_button_prev == HONDA_BTN_SET);
