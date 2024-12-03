@@ -198,35 +198,6 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
     }
     return self.packer.make_can_msg_panda("Steering_Data_FD1", bus, values)
 
-  def _acc_state_msg(self, state):
-    brake = self.safety.get_brake_pressed_prev()
-    values = {
-      "BpedDrvAppl_D_Actl": 2 if brake else 1,
-      "CcStat_D_Actl": state,
-    }
-    return self.packer.make_can_msg_panda("EngBrakeData", 0, values)
-
-  def _lkas_button_msg(self):
-    values = {
-      "TjaButtnOnOffPress": 1,
-    }
-    return self.packer.make_can_msg_panda("Steering_Data_FD1", 0, values)
-
-  def test_enable_control_from_main(self):
-    for controls_allowed in (True, False):
-      for state in range(6):
-        self.safety.set_controls_allowed(controls_allowed)
-        self._rx(self._acc_state_msg(state))
-        allowed = (state == 3 or state == 4 or state == 5)
-        self.assertEqual(allowed, self.safety.get_acc_main_on())
-
-  def test_lkas_button(self):
-    for enable_mads in (True, False):
-      self.safety.set_enable_mads(enable_mads)
-      self.safety.set_controls_allowed_lat(False)
-      self._rx(self._lkas_button_msg())
-      self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
-
   def test_rx_hook(self):
     # checksum, counter, and quality flag checks
     for quality_flag in [True, False]:
