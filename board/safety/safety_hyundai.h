@@ -41,7 +41,6 @@ static const CanMsg HYUNDAI_TX_MSGS[] = {
 #define HYUNDAI_SCC12_ADDR_CHECK(scc_bus)                                                                                  \
   {.msg = {{0x421, (scc_bus), 8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}}, \
 
-static const int HYUNDAI_PARAM_LFA_BUTTON = 1024;
 static bool hyundai_legacy = false;
 
 static uint8_t hyundai_get_counter(const CANPacket_t *to_push) {
@@ -140,6 +139,10 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
       update_sample(&torque_driver, torque_driver_new);
     }
 
+    if (addr == 0x391) {
+      lkas_button_press = GET_BIT(to_push, 4U) ? 1 : 0;
+    }
+
     // ACC steering wheel buttons
     if (addr == 0x4F1) {
       int cruise_button = GET_BYTE(to_push, 0) & 0x7U;
@@ -168,11 +171,6 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
       brake_pressed = ((GET_BYTE(to_push, 5) >> 5U) & 0x3U) == 0x2U;
     }
 
-    if (addr == 0x391) {
-      lkas_button = GET_BIT(to_push, 4U) != 0;
-      mads_check_lkas_button();
-    }
-
     bool stock_ecu_detected = (addr == 0x340);
 
     // If openpilot is controlling longitudinal we need to ensure the radar is turned off
@@ -181,12 +179,6 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
       stock_ecu_detected = true;
     }
     generic_rx_checks(stock_ecu_detected);
-  }
-
-  mads_check_acc_main();
-
-  if (acc_main_on && !acc_main_on_prev) {
-    acc_main_on_mismatches = 0;
   }
 }
 
@@ -206,11 +198,6 @@ static bool hyundai_tx_hook(const CANPacket_t *to_send) {
     if ((CR_VSM_DecCmd != 0) || FCA_CmdAct || CF_VSM_DecCmdAct) {
       tx = false;
     }
-  }
-
-  if (addr == 0x420) {
-    bool acc_main_on_tx = GET_BIT(to_send, 0U);
-    reset_acc_main(acc_main_on_tx);
   }
 
   // ACCEL: safety check
