@@ -150,22 +150,6 @@ static void _mads_resume_controls(void) {
     }
 }
 
-// // Reset ACC main state with mismatch handling
-// static void _mads_reset_acc_main(bool acc_main_tx) {
-//     if (_mads_state.acc_main.current && !acc_main_tx) {
-//         _mads_state.acc_main.mismatch_count++;
-//
-//         if (_mads_state.acc_main.mismatch_count >= _mads_state.acc_main.mismatch_threshold) {
-//             _mads_state.acc_main.current = acc_main_tx;
-//
-//             // Update lateral control based on ACC main state
-//             _mads_state.controls_allowed_lat = false;
-//         }
-//     } else {
-//         _mads_state.acc_main.mismatch_count = 0;
-//     }
-// }
-
 // Check braking condition
 static void _mads_check_braking(bool is_braking) {
     bool was_braking = _mads_state.is_braking;
