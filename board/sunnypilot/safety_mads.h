@@ -5,12 +5,17 @@
 #include <stdint.h>
 
 // Flags meant to be set by each specific safety_{make}
-#define BUTTON_UNINITIALIZED (-1)
-extern int main_button_press;
-int main_button_press = BUTTON_UNINITIALIZED;
+typedef enum {
+    MADS_BUTTON_UNAVAILABLE = -1,
+    MADS_BUTTON_NOT_PRESSED = 0,
+    MADS_BUTTON_PRESSED = 1
+} ButtonState;
 
-extern int lkas_button_press;
-int lkas_button_press = BUTTON_UNINITIALIZED;
+extern ButtonState main_button_press;
+ButtonState main_button_press = MADS_BUTTON_UNAVAILABLE;
+
+extern ButtonState lkas_button_press;
+ButtonState lkas_button_press = MADS_BUTTON_UNAVAILABLE;
 // --
 
 // Enable the ability to enable sunnypilot Automatic Lane Centering and ACC/SCC independently of each other. This
@@ -30,9 +35,9 @@ int lkas_button_press = BUTTON_UNINITIALIZED;
 
 // Button transition types
 typedef enum {
-    MADS_BUTTON_NO_CHANGE,
-    MADS_BUTTON_PRESSED,
-    MADS_BUTTON_RELEASED
+    MADS_BUTTON_TRANSITION_NO_CHANGE,
+    MADS_BUTTON_TRANSITION_TO_PRESSED,
+    MADS_BUTTON_TRANSITION_TO_RELEASED
 } ButtonTransition;
 
 // MADS System State Struct
@@ -50,16 +55,16 @@ typedef struct {
 
     // Button states with last state tracking
     struct {
-        const int *current;
-        int last;
+        const ButtonState *current;
+        ButtonState last;
         ButtonTransition transition;
         uint32_t press_timestamp;
         bool is_engaged;
     } main_button;
 
     struct {
-        const int *current;
-        int last;
+        const ButtonState *current;
+        ButtonState last;
         ButtonTransition transition;
         uint32_t press_timestamp;
         bool is_engaged;
@@ -87,14 +92,14 @@ static MADSState _mads_state; // Rule 8.4: static for internal linkage
 
 // Determine button transition
 static ButtonTransition _get_button_transition(bool current, bool last) {
-    ButtonTransition result = MADS_BUTTON_NO_CHANGE;
+    ButtonTransition result = MADS_BUTTON_TRANSITION_NO_CHANGE;
     
     if (current && !last) {
-        result = MADS_BUTTON_PRESSED;
+        result = MADS_BUTTON_TRANSITION_TO_PRESSED;
     } else if (!current && last) {
-        result = MADS_BUTTON_RELEASED;
+        result = MADS_BUTTON_TRANSITION_TO_RELEASED;
     } else {
-        result = MADS_BUTTON_NO_CHANGE;
+        result = MADS_BUTTON_TRANSITION_NO_CHANGE;
     }
     
     return result;
@@ -112,13 +117,13 @@ static void mads_state_init(void) {
     _mads_state.disengage_lateral_on_brake = true;
 
     // Button state initialization
-    _mads_state.main_button.last = BUTTON_UNINITIALIZED;
-    _mads_state.main_button.transition = MADS_BUTTON_NO_CHANGE;
+    _mads_state.main_button.last = MADS_BUTTON_UNAVAILABLE;
+    _mads_state.main_button.transition = MADS_BUTTON_TRANSITION_NO_CHANGE;
     _mads_state.main_button.press_timestamp = 0;
     _mads_state.main_button.is_engaged = false;
 
-    _mads_state.lkas_button.last = BUTTON_UNINITIALIZED;
-    _mads_state.lkas_button.transition = MADS_BUTTON_NO_CHANGE;
+    _mads_state.lkas_button.last = MADS_BUTTON_UNAVAILABLE;
+    _mads_state.lkas_button.transition = MADS_BUTTON_TRANSITION_NO_CHANGE;
     _mads_state.lkas_button.press_timestamp = 0;
     _mads_state.lkas_button.is_engaged = false;
 
@@ -174,16 +179,16 @@ void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, b
     }
 
     // Update button states
-    if (main_button_press != BUTTON_UNINITIALIZED) {
+    if (main_button_press != MADS_BUTTON_UNAVAILABLE) {
         _mads_state.state_flags |= MADS_STATE_FLAG_MAIN_BUTTON_AVAILABLE;
         _mads_state.main_button.current = &main_button_press;
         _mads_state.main_button.transition = _get_button_transition(
-            *_mads_state.main_button.current > 0,
-            _mads_state.main_button.last > 0
+            *_mads_state.main_button.current == MADS_BUTTON_PRESSED,
+            _mads_state.main_button.last == MADS_BUTTON_PRESSED
         );
         
         // Engage on press, disengage on press if already pressed
-        if (_mads_state.main_button.transition == MADS_BUTTON_PRESSED) {
+        if (_mads_state.main_button.transition == MADS_BUTTON_TRANSITION_TO_PRESSED) {
             if (_mads_state.main_button.is_engaged) {
                 _mads_state.main_button.is_engaged = false;  // Disengage if already engaged
             } else {
@@ -195,15 +200,15 @@ void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, b
     }
 
     // Same for LKAS button
-    if (lkas_button_press != BUTTON_UNINITIALIZED) {
+    if (lkas_button_press != MADS_BUTTON_UNAVAILABLE) {
         _mads_state.state_flags |= MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
         _mads_state.lkas_button.current = &lkas_button_press;
         _mads_state.lkas_button.transition = _get_button_transition(
-            *_mads_state.lkas_button.current > 0,
-            _mads_state.lkas_button.last > 0
+            *_mads_state.lkas_button.current == MADS_BUTTON_PRESSED,
+            _mads_state.lkas_button.last == MADS_BUTTON_PRESSED
         );
 
-        if (_mads_state.lkas_button.transition == MADS_BUTTON_PRESSED) {
+        if (_mads_state.lkas_button.transition == MADS_BUTTON_TRANSITION_TO_PRESSED) {
             if (_mads_state.lkas_button.is_engaged) {
                 _mads_state.lkas_button.is_engaged = false;
             } else {
@@ -218,7 +223,7 @@ void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, b
     _mads_state.cruise_engaged = cruise_engaged;
 
     // Use engagement state for lateral control - prioritize LKAS button if available
-    if (lkas_button_press != BUTTON_UNINITIALIZED) {
+    if (lkas_button_press != MADS_BUTTON_UNAVAILABLE) {
         _mads_state.controls_allowed_lat = _mads_state.lkas_button.is_engaged;
     } else {
         _mads_state.controls_allowed_lat = _mads_state.main_button.is_engaged || _mads_state.lkas_button.is_engaged;

@@ -69,7 +69,7 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
 
     if (addr == 0x412) {
       uint8_t lkas_hud = GET_BYTE(to_push, 0U) & 0xC0U;
-      lkas_button_press = lkas_hud;
+      lkas_button_press = (lkas_hud == 1U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
     }
   }
 

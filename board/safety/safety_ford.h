@@ -184,7 +184,7 @@ static void ford_rx_hook(const CANPacket_t *to_push) {
     }
     
     if (addr == FORD_Steering_Data_FD1) {
-      lkas_button_press = GET_BIT(to_push, 40U) ? 1 : 0;
+      lkas_button_press = GET_BIT(to_push, 40U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
     }
 
     // If steering controls messages are received on the destination bus, it's an indication

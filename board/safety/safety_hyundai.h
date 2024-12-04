@@ -140,7 +140,7 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
     }
 
     if (addr == 0x391) {
-      lkas_button_press = GET_BIT(to_push, 4U) ? 1 : 0;
+      lkas_button_press = GET_BIT(to_push, 4U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
     }
 
     // ACC steering wheel buttons

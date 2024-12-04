@@ -91,7 +91,7 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
     hyundai_last_button_interaction = MIN(hyundai_last_button_interaction + 1U, HYUNDAI_PREV_BUTTON_SAMPLES);
   }
 
-  main_button_press = main_button ? 1 : 0;
+  main_button_press = main_button ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
 
   if (hyundai_longitudinal) {
     // enter controls on falling edge of resume or set
