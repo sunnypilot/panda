@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sunnypilot/safety_mads.h>
-
 #include "safety_declarations.h"
 
 // Stock longitudinal

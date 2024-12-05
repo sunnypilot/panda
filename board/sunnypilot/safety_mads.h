@@ -1,5 +1,4 @@
-#ifndef MADS_STATE_H
-#define MADS_STATE_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -247,5 +246,3 @@ void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
 bool mads_is_lateral_control_allowed_by_mads(void) {
     return _mads_state.system_enabled && _mads_state.controls_allowed_lat;
 }
-
-#endif // MADS_STATE_H
