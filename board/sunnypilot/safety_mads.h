@@ -140,7 +140,7 @@ static void mads_state_init(void) {
 }
 
 // Exit lateral controls
-static void _mads_exit_controls(void) {
+static void mads_exit_controls(void) {
     if (_mads_state.controls_allowed_lat) {
         _mads_state.disengaged_from_brakes = true;
         _mads_state.controls_allowed_lat = false;
@@ -159,7 +159,7 @@ static void _mads_resume_controls(void) {
 static void _mads_check_braking(bool is_braking) {
     bool was_braking = _mads_state.is_braking;
     if (is_braking && (!was_braking || *_mads_state.is_vehicle_moving_ptr) && _mads_state.disengage_lateral_on_brake) {
-        _mads_exit_controls();
+        mads_exit_controls();
     }
 
     if (!is_braking && _mads_state.disengage_lateral_on_brake) {
@@ -227,7 +227,6 @@ void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, b
     _mads_state.controls_allowed_lat = _mads_state.main_button.is_engaged || _mads_state.lkas_button.is_engaged || *_mads_state.acc_main.current;
 
     // Check ACC main state and braking conditions
-    // _mads_reset_acc_main(acc_main);
     _mads_check_braking(is_braking);
 
     // Update ACC main state
