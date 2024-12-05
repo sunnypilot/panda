@@ -131,9 +131,17 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
       self.assertFalse(self._rx(to_push))
       self.assertFalse(self.safety.get_controls_allowed())
 
-  #TODO-SP do not skip
   def test_enable_control_from_lkas_button_press(self):
-    raise unittest.SkipTest("Skipping temporarily")
+    for enable_mads in (True, False):
+      with self.subTest("enable_mads", mads_enabled=enable_mads):
+        for lkas_hud in range(4):
+          self.safety.set_enable_mads(enable_mads, False)
+          self._mads_states_cleanup()
+          with self.subTest("lkas_hud", button_state=lkas_hud):
+            self._rx(self._lkas_button_msg(lkas_hud))
+            self._rx(self._speed_msg(0))  # Only for toyota we must send a msg to bus 0 because generic_rx_checks happen only there.
+            self.assertEqual(enable_mads and lkas_hud in range(1, 4), self.safety.get_controls_allowed_lat())
+    self._mads_states_cleanup()
 
 
 class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
