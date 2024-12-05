@@ -74,6 +74,8 @@ def setup_safety_helpers(ffi):
 
   int get_mads_acc_main(void);
   void set_acc_main_on(bool c);
+  int get_lkas_button_press(void);
+  // int get_temp_debug(void);
   """)
 
 class PandaSafety(Protocol):
@@ -147,3 +149,5 @@ class PandaSafety(Protocol):
   def set_lkas_button_engaged(self, engaged: bool) -> None: ...
   def get_lkas_button_engaged(self) -> bool: ...
 
+  def get_lkas_button_press(self) -> int: ...
+  # def get_temp_debug(self) -> int: ...

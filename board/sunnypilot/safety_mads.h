@@ -16,6 +16,9 @@ ButtonState main_button_press = MADS_BUTTON_UNAVAILABLE;
 
 extern ButtonState lkas_button_press;
 ButtonState lkas_button_press = MADS_BUTTON_UNAVAILABLE;
+
+// extern int temp_debug;
+// int temp_debug = 0;
 // --
 
 // Enable the ability to enable sunnypilot Automatic Lane Centering and ACC/SCC independently of each other. This

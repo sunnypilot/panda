@@ -237,6 +237,10 @@ void set_lkas_button_press(int c){
   lkas_button_press = c;
 }
 
+int get_lkas_button_press(void){
+  return lkas_button_press;
+}
+
 void set_controls_allowed_lat(bool c){
   _mads_state.controls_allowed_lat = c;
 }
@@ -260,6 +264,10 @@ void set_lkas_button_engaged(bool c){
 int get_mads_acc_main(void){
   return *_mads_state.acc_main.current;
 }
+
+//int get_temp_debug(void){
+//  return temp_debug;
+//}
 
 void init_tests(void){
   // get HW_TYPE from env variable set in test.sh
