@@ -168,19 +168,6 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
     }
     return self.packer.make_can_msg_panda("Lane_Assist_Data1", 0, values)
 
-  def test_enable_control_from_acc_main_on(self):
-    """Test that lateral controls are allowed when ACC main is enabled"""
-    for enable_mads in (True, False):
-      with self.subTest("enable_mads", mads_enabled=enable_mads):
-        self.safety.set_enable_mads(enable_mads, False)
-        for acc_main_on in (True, False):
-          with self.subTest("acc_main_on", acc_main_on=acc_main_on):
-            self._mads_states_cleanup()
-            self.safety.set_acc_main_on(acc_main_on)
-            self._rx(self._speed_msg(0))
-            self.assertEqual(enable_mads and acc_main_on, self.safety.get_controls_allowed_lat(), f"{self.safety.get_acc_main_on()}")
-    self._mads_states_cleanup()
-
   def test_enable_control_from_main(self):
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):

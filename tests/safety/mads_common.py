@@ -65,7 +65,7 @@ class MadsCommonBase(unittest.TestCase):
           with self.subTest("acc_main_on", acc_main_on=acc_main_on):
             self._mads_states_cleanup()
             self.safety.set_acc_main_on(acc_main_on)
-            self._rx(self._user_brake_msg(False))
+            self._rx(self._speed_msg(0))
             self.assertEqual(enable_mads and acc_main_on, self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
