@@ -376,11 +376,6 @@ class TestHondaNidecPcmAltSafety(TestHondaNidecPcmSafety):
     self.__class__.cnt_button += 1
     return self.packer.make_can_msg_panda("SCM_BUTTONS", bus, values)
 
-  def _lkas_button_msg(self, enabled):
-    values = {"CRUISE_SETTING": 1 if enabled else 0, "COUNTER": self.cnt_button % 4}
-    self.__class__.cnt_button += 1
-    return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
-
 
 # ********************* Honda Bosch **********************
 

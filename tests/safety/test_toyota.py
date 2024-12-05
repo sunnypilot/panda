@@ -81,6 +81,10 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
     values = {"CRUISE_ACTIVE": enable}
     return self.packer.make_can_msg_panda("PCM_CRUISE", 0, values)
 
+  def _lkas_button_msg(self, enabled):
+    values = {"LKAS_STATUS": enabled}
+    return self.packer.make_can_msg_panda("LKAS_HUD", 2, values)
+
   def test_diagnostics(self, stock_longitudinal: bool = False):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
                            (False, b"\x0F\x03\xAA\xAA\x00\x00\x00\x00"),  # non-tester present
