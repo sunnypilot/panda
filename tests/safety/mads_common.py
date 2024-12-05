@@ -16,24 +16,28 @@ class MadsCommonBase(unittest.TestCase):
     raise NotImplementedError
 
   @abstractmethod
+  def _main_cruise_button_msg(self, enabled):
+    try:
+      self._button_msg(enabled)
+    except (NotImplementedError, AttributeError):
+      raise unittest.SkipTest("Skipping test because _button_msg is not implemented for this car. If you know it, please implement it.")
+
+    raise NotImplementedError("Since _button_msg is implemented, _main_cruise_button_msg should be implemented as well to signal the main cruise button press")
+
+  @abstractmethod
   def _acc_state_msg(self, enabled):
     raise NotImplementedError
 
-  # def test_enable_control_from_cruise_button_press(self):
-  #   try:
-  #     self._button_msg(False)
-  #   except NotImplementedError:
-  #     raise unittest.SkipTest("Skipping test because _button_msg is not implemented for this car")
-  #
-  #   for enable_mads in (True, False):
-  #     with self.subTest("enable_mads", mads_enabled=enable_mads):
-  #       for cruise_button_press in [True, False]:
-  #         self.safety.set_enable_mads(enable_mads, False)
-  #         with self.subTest("cruise_button_press", button_state=cruise_button_press):
-  #           self._mads_states_cleanup()
-  #           self._rx(self._button_msg(0, 1 if cruise_button_press else 0))
-  #           self.assertEqual(enable_mads and cruise_button_press, self.safety.get_controls_allowed_lat())
-  #   self._mads_states_cleanup()
+  def test_enable_control_from_cruise_button_press(self):
+    for enable_mads in (True, False):
+      with self.subTest("enable_mads", mads_enabled=enable_mads):
+        for cruise_button_press in [True, False]:
+          self.safety.set_enable_mads(enable_mads, False)
+          with self.subTest("cruise_button_press", button_state=cruise_button_press):
+            self._mads_states_cleanup()
+            self._rx(self._main_cruise_button_msg(cruise_button_press))
+            self.assertEqual(enable_mads and cruise_button_press, self.safety.get_controls_allowed_lat(), f"state_flags: {self.safety.get_mads_state_flags()} | temp_debug {self.safety.get_temp_debug()} | main_button {self.safety.get_main_button_press()})")
+    self._mads_states_cleanup()
 
   def test_enable_control_from_lkas_button_press(self):
     try:
