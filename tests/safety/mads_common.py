@@ -36,7 +36,7 @@ class MadsCommonBase(unittest.TestCase):
           with self.subTest("cruise_button_press", cruise_button_press=cruise_button_press):
             self._mads_states_cleanup()
             self._rx(self._main_cruise_button_msg(cruise_button_press))
-            self.assertEqual(enable_mads and cruise_button_press, self.safety.get_controls_allowed_lat(), f"state_flags: {self.safety.get_mads_state_flags()} | temp_debug {self.safety.get_temp_debug()} | main_button {self.safety.get_main_button_press()})")
+            self.assertEqual(enable_mads and cruise_button_press, self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
   def test_enable_control_from_lkas_button_press(self):

@@ -72,6 +72,9 @@ class TestChryslerSafety(common.PandaCarSafetyTest, common.MotorTorqueSteeringSa
       self.assertFalse(self._tx(self._button_msg(cancel=True, resume=True)))
       self.assertFalse(self._tx(self._button_msg(cancel=False, resume=False)))
 
+  def test_enable_control_from_cruise_button_press(self):
+    raise unittest.SkipTest("Chrysler does not enable controls from cruise button press, we only enable controls from the PCM status message")
+
 
 class TestChryslerRamDTSafety(TestChryslerSafety):
   TX_MSGS = [[0xB1, 2], [0xA6, 0], [0xFA, 0]]
