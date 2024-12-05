@@ -2,8 +2,6 @@
 import enum
 import unittest
 
-from shapely.speedups import enable
-
 from panda import Panda
 from panda.tests.libpanda import libpanda_py
 import panda.tests.safety.common as common
@@ -116,12 +114,12 @@ class TestSubaruSafetyBase(common.PandaCarSafetyTest):
   def test_enable_control_from_lkas_button_press(self):
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
-        self.safety.set_enable_mads(enable_mads, False)
         for lkas_hud in range(4):
+          self.safety.set_enable_mads(enable_mads, False)
+          self._mads_states_cleanup()
           with self.subTest("lkas_hud", button_state=lkas_hud):
-            self._mads_states_cleanup()
             self._rx(self._lkas_button_msg(lkas_hud))
-            self.assertEqual(enable_mads and lkas_hud != 0, self.safety.get_controls_allowed_lat())
+            self.assertEqual(enable_mads and lkas_hud in range(1, 4), self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
 
