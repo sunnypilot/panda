@@ -58,10 +58,8 @@ static void nissan_rx_hook(const CANPacket_t *to_push) {
     acc_main_on = GET_BIT(to_push, 17U);
   }
 
-  if (addr == 0x1B) {
-    if (((bus == 1) && !nissan_alt_eps) || ((bus == 2) && nissan_alt_eps)) {
-      acc_main_on = GET_BIT(to_push, 36U);
-    }
+  if ((addr == 0x1B6) && (bus == (nissan_alt_eps ? 2 : 1))) {
+    acc_main_on = GET_BIT(to_push, 36U);
   }
 
   generic_rx_checks((addr == 0x169) && (bus == 0));

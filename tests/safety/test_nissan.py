@@ -17,6 +17,7 @@ class TestNissanSafety(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest
 
   EPS_BUS = 0
   CRUISE_BUS = 2
+  ACC_MAIN_BUS = 1
 
   # Angle control limits
   DEG_TO_CAN = 100
@@ -57,7 +58,7 @@ class TestNissanSafety(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest
 
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_ON": main_on}
-    return self.packer.make_can_msg_panda("PRO_PILOT", 1, values)
+    return self.packer.make_can_msg_panda("PRO_PILOT", self.ACC_MAIN_BUS, values)
 
   def _acc_button_cmd(self, cancel=0, propilot=0, flw_dist=0, _set=0, res=0):
     no_button = not any([cancel, propilot, flw_dist, _set, res])
@@ -82,12 +83,26 @@ class TestNissanSafety(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest
         tx = self._tx(self._acc_button_cmd(**args))
         self.assertEqual(tx, should_tx)
 
+  def test_enable_control_from_acc_main_on(self):
+    """Test that lateral controls are allowed when ACC main is enabled"""
+    for enable_mads in (True, False):
+      with self.subTest("enable_mads", mads_enabled=enable_mads):
+        self.safety.set_enable_mads(enable_mads, False)
+        for acc_main_on in (True, False):
+          with self.subTest("acc_main_on", acc_main_on=acc_main_on):
+            self._mads_states_cleanup()
+            self._rx(self._acc_state_msg(acc_main_on))
+            self._rx(self._speed_msg(0))
+            self.assertEqual(enable_mads and acc_main_on, self.safety.get_controls_allowed_lat())
+    self._mads_states_cleanup()
+
 
 class TestNissanSafetyAltEpsBus(TestNissanSafety):
   """Altima uses different buses"""
 
   EPS_BUS = 1
   CRUISE_BUS = 1
+  ACC_MAIN_BUS = 2
 
   def setUp(self):
     self.packer = CANPackerPanda("nissan_x_trail_2017_generated")
@@ -97,7 +112,7 @@ class TestNissanSafetyAltEpsBus(TestNissanSafety):
 
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_ON": main_on}
-    return self.packer.make_can_msg_panda("PRO_PILOT", 2, values)
+    return self.packer.make_can_msg_panda("PRO_PILOT", self.ACC_MAIN_BUS, values)
 
 
 class TestNissanLeafSafety(TestNissanSafety):
