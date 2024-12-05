@@ -250,10 +250,28 @@ class HondaBase(common.PandaCarSafetyTest):
     self.assertTrue(self._tx(self._send_steer_msg(0x0000)))
     self.assertFalse(self._tx(self._send_steer_msg(0x1000)))
 
-  def _lkas_button_msg(self, enabled):
-    values = {"CRUISE_SETTING": 1 if enabled else 0, "COUNTER": self.cnt_button % 4}
+  def _lkas_button_msg(self, setting_btn):
+    values = {"CRUISE_SETTING": setting_btn, "COUNTER": self.cnt_button % 4}
     self.__class__.cnt_button += 1
     return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
+
+  def test_enable_control_from_lkas_button_press(self):
+    for enable_mads in (True, False):
+      with self.subTest("enable_mads", mads_enabled=enable_mads):
+        self.safety.set_enable_mads(enable_mads, False)
+        for lkas_button_press_prev in (-1, 0, 1):
+          for lkas_button_press_cur in (-1, 0, 1):
+            with self.subTest("lkas_button_press", button_state=(lkas_button_press_prev, lkas_button_press_cur)):
+              self._mads_states_cleanup()
+              self.safety.set_lkas_button_press(lkas_button_press_prev)
+              self._rx(self._user_brake_msg(False))
+              self.assertFalse(self.safety.get_controls_allowed_lat())
+
+              # should enter controls allowed on falling edge from 0 to 1
+              should_enable = enable_mads and lkas_button_press_prev != lkas_button_press_cur and lkas_button_press_cur == 1
+              self._rx(self._lkas_button_msg(lkas_button_press_cur))
+              self.assertEqual(should_enable, self.safety.get_controls_allowed_lat())
+    self._mads_states_cleanup()
 
 
 # ********************* Honda Nidec **********************
@@ -375,6 +393,11 @@ class TestHondaNidecPcmAltSafety(TestHondaNidecPcmSafety):
     values = {"CRUISE_BUTTONS": buttons, "MAIN_ON": main_on, "COUNTER": self.cnt_button % 4}
     self.__class__.cnt_button += 1
     return self.packer.make_can_msg_panda("SCM_BUTTONS", bus, values)
+
+  def _lkas_button_msg(self, setting_btn):
+    values = {"CRUISE_SETTING": setting_btn, "COUNTER": self.cnt_button % 4}
+    self.__class__.cnt_button += 1
+    return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
 
 
 # ********************* Honda Bosch **********************
