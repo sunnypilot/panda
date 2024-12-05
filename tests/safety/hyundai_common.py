@@ -154,8 +154,3 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
     self.assertFalse(self.safety.get_relay_malfunction())
     self._rx(make_msg(bus, addr, 8))
     self.assertTrue(self.safety.get_relay_malfunction())
-
-  # TODO-SP: Why did we add this pass here?
-  def test_enable_control_from_main(self):
-    pass
-

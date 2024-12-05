@@ -86,6 +86,9 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
     values = {"LKAS_BTN": enabled}
     return self.packer.make_can_msg_panda("CRUISE_BUTTONS", self.PT_BUS, values)
 
+  def _main_cruise_button_msg(self, enabled):
+    return self._button_msg(0, enabled)
+
   def test_enable_control_from_lkas(self):
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):

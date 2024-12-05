@@ -121,16 +121,19 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
     values = {"LFA_Pressed": enabled}
     return self.packer.make_can_msg_panda("BCM_PO_11", 0, values)
 
-  def test_enable_control_from_main(self):
-    for enable_mads in (True, False):
-      with self.subTest("enable_mads", mads_enabled=enable_mads):
-        self.safety.set_enable_mads(enable_mads, False)
-        for main_button_msg_valid in (True, False):
-          with self.subTest("main_button_msg_valid", state_valid=main_button_msg_valid):
-            self._mads_states_cleanup()
-            self._rx(self._button_msg(0, main_button_msg_valid))
-            self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat())
-    self._mads_states_cleanup()
+  def _main_cruise_button_msg(self, enabled):
+    return self._button_msg(0, enabled)
+
+  # def test_enable_control_from_main(self):
+  #   for enable_mads in (True, False):
+  #     with self.subTest("enable_mads", mads_enabled=enable_mads):
+  #       self.safety.set_enable_mads(enable_mads, False)
+  #       for main_button_msg_valid in (True, False):
+  #         with self.subTest("main_button_msg_valid", state_valid=main_button_msg_valid):
+  #           self._mads_states_cleanup()
+  #           self._rx(self._button_msg(0, main_button_msg_valid))
+  #           self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat())
+  #   self._mads_states_cleanup()
 
   def test_acc_main_state_from_message(self):
     """Test that ACC main state is correctly set when receiving 0x420 message, toggling HYUNDAI_LONG flag"""
