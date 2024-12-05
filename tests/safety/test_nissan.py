@@ -55,13 +55,9 @@ class TestNissanSafety(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest
     values = {"GAS_PEDAL": gas}
     return self.packer.make_can_msg_panda("GAS_PEDAL", self.EPS_BUS, values)
 
-  def _acc_state_msg_pro_pilot(self, main_on):
+  def _acc_state_msg(self, main_on):
     values = {"CRUISE_ON": main_on}
-    return self.packer.make_can_msg_panda("PRO_PILOT", self.CRUISE_BUS, values)
-
-  def _acc_state_msg_cruise_throttle(self, main_on):
-    values = {"CRUISE_AVAILABLE": main_on}
-    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", self.EPS_BUS, values)
+    return self.packer.make_can_msg_panda("PRO_PILOT", 1, values)
 
   def _acc_button_cmd(self, cancel=0, propilot=0, flw_dist=0, _set=0, res=0):
     no_button = not any([cancel, propilot, flw_dist, _set, res])
@@ -101,7 +97,7 @@ class TestNissanSafetyAltEpsBus(TestNissanSafety):
 
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_ON": main_on}
-    return self.packer.make_can_msg_panda("PRO_PILOT", self.CRUISE_BUS, values)
+    return self.packer.make_can_msg_panda("PRO_PILOT", 2, values)
 
 
 class TestNissanLeafSafety(TestNissanSafety):
@@ -109,7 +105,7 @@ class TestNissanLeafSafety(TestNissanSafety):
   def setUp(self):
     self.packer = CANPackerPanda("nissan_leaf_2018_generated")
     self.safety = libpanda_py.libpanda
-    self.safety.set_safety_hooks(Panda.SAFETY_NISSAN, 0)
+    self.safety.set_safety_hooks(Panda.SAFETY_NISSAN, Panda.FLAG_NISSAN_LEAF)
     self.safety.init_tests()
 
   def _user_brake_msg(self, brake):
@@ -118,6 +114,10 @@ class TestNissanLeafSafety(TestNissanSafety):
 
   def _user_gas_msg(self, gas):
     values = {"GAS_PEDAL": gas}
+    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", 0, values)
+
+  def _acc_state_msg(self, main_on):
+    values = {"CRUISE_AVAILABLE": main_on}
     return self.packer.make_can_msg_panda("CRUISE_THROTTLE", 0, values)
 
   # TODO: leaf should use its own safety param

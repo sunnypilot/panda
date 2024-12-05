@@ -3,6 +3,7 @@
 #include "safety_declarations.h"
 
 static bool nissan_alt_eps = false;
+static bool nissan_leaf = false;
 
 static void nissan_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
@@ -53,12 +54,13 @@ static void nissan_rx_hook(const CANPacket_t *to_push) {
     pcm_cruise_check(cruise_engaged);
   }
 
-  if (((addr == 0x1B6) && (((bus == 1) && !nissan_alt_eps) || ((bus == 2) && nissan_alt_eps))) || ((addr == 0x239) && (bus == 0))) {
-    if ((addr == 0x1B6) && (((bus == 1) && !nissan_alt_eps) || ((bus == 2) && nissan_alt_eps))) {
+  if ((addr == 0x239) && (bus == 0) && nissan_leaf) {
+    acc_main_on = GET_BIT(to_push, 17U);
+  }
+
+  if (addr == 0x1B) {
+    if (((bus == 1) && !nissan_alt_eps) || ((bus == 2) && nissan_alt_eps)) {
       acc_main_on = GET_BIT(to_push, 36U);
-    }
-    if ((addr == 0x239) && (bus == 0)) {
-      acc_main_on = GET_BIT(to_push, 17U);
     }
   }
 
@@ -159,8 +161,10 @@ static safety_config nissan_init(uint16_t param) {
 
   // EPS Location. false = V-CAN, true = C-CAN
   const int NISSAN_PARAM_ALT_EPS_BUS = 1;
+  const int NISSAN_PARAM_LEAF = 512;
 
   nissan_alt_eps = GET_FLAG(param, NISSAN_PARAM_ALT_EPS_BUS);
+  nissan_leaf = GET_FLAG(param, NISSAN_PARAM_LEAF);
   return BUILD_SAFETY_CFG(nissan_rx_checks, NISSAN_TX_MSGS);
 }
 
