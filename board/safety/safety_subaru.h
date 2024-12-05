@@ -107,8 +107,8 @@ static void subaru_rx_hook(const CANPacket_t *to_push) {
   }
 
   if ((addr == MSG_SUBARU_ES_LKAS_State) && (bus == SUBARU_CAM_BUS)) {
-    int lkas_hud = (GET_BYTE(to_push, 2) & 0x0CU) >> 2U;
-    if ((lkas_hud >= 1) && (lkas_hud <= 3)) {
+    bool lkas_hud = ((GET_BYTE(to_push, 2) & 0x0CU) >> 2U) > 0U;
+    if (lkas_hud) {
       lkas_button_press = MADS_BUTTON_PRESSED;
     }
   }
