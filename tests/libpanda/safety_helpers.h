@@ -44,15 +44,15 @@ bool get_controls_allowed_lat(void){
 }
 
 void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake){
-	mads_set_system_state(enable_mads, disengage_lat_on_brake);
+  mads_set_system_state(enable_mads, disengage_lat_on_brake);
 }
 
 bool get_enable_mads(void){
-	return _mads_state.system_enabled;
+  return _mads_state.system_enabled;
 }
 
 bool get_disengage_lat_on_brake(void){
-	return _mads_state.disengage_lateral_on_brake;
+  return _mads_state.disengage_lateral_on_brake;
 }
 
 int get_alternative_experience(void){
@@ -222,11 +222,11 @@ int get_mads_main_button_transition(void){
 }
 
 int get_mads_main_button_current(void){
-    return *_mads_state.main_button.current;
+  return *_mads_state.main_button.current;
 }
 
 int get_mads_main_button_last(void){
-    return _mads_state.main_button.last;
+  return _mads_state.main_button.last;
 }
 
 void set_main_button_press(int c){

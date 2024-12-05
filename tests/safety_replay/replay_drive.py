@@ -73,7 +73,7 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   print("blocked msgs:", tx_blocked)
   print("blocked with controls allowed:", tx_controls_blocked)
   print("blocked addrs:", blocked_addrs)
-  print("Mads enabled:", safety.get_enable_mads())
+  print("mads enabled:", safety.get_enable_mads())
 
   return tx_controls_blocked == 0 and rx_invalid == 0 and not safety_tick_rx_invalid
 
