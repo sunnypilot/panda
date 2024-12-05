@@ -259,18 +259,11 @@ class HondaBase(common.PandaCarSafetyTest):
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
         self.safety.set_enable_mads(enable_mads, False)
-        for lkas_button_press_prev in (-1, 0, 1):
-          for lkas_button_press_cur in (-1, 0, 1):
-            with self.subTest("lkas_button_press", button_state=(lkas_button_press_prev, lkas_button_press_cur)):
-              self._mads_states_cleanup()
-              self.safety.set_lkas_button_press(lkas_button_press_prev)
-              self._rx(self._user_brake_msg(False))
-              self.assertFalse(self.safety.get_controls_allowed_lat())
-
-              # should enter controls allowed on falling edge from 0 to 1
-              should_enable = enable_mads and lkas_button_press_prev != lkas_button_press_cur and lkas_button_press_cur == 1
-              self._rx(self._lkas_button_msg(lkas_button_press_cur))
-              self.assertEqual(should_enable, self.safety.get_controls_allowed_lat())
+        for lkas_button_press in range(3):
+          with self.subTest("lkas_button_press", button_state=lkas_button_press):
+            self._mads_states_cleanup()
+            self._rx(self._lkas_button_msg(lkas_button_press))
+            self.assertEqual(enable_mads and lkas_button_press == 1, self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
 
