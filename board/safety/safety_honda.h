@@ -115,9 +115,9 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
   if (((addr == 0x1A6) || (addr == 0x296)) && (bus == pt_bus)) {
     int button = (GET_BYTE(to_push, 0) & 0xE0U) >> 5;
     int cruise_setting = ((GET_BYTE(to_push, (addr == 0x296) ? 0U : 5U) & 0x0CU) >> 2U);
-    if (cruise_setting == 1U) {
+    if (cruise_setting == 1) {
       lkas_button_press = MADS_BUTTON_PRESSED;
-    } else if (cruise_setting == 0U) {
+    } else if (cruise_setting == 0) {
       lkas_button_press = MADS_BUTTON_NOT_PRESSED;
     } else {
     }
