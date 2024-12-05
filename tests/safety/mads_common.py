@@ -24,7 +24,7 @@ class MadsCommonBase(unittest.TestCase):
   #     self._button_msg(False)
   #   except NotImplementedError:
   #     raise unittest.SkipTest("Skipping test because _button_msg is not implemented for this car")
-  # 
+  #
   #   for enable_mads in (True, False):
   #     with self.subTest("enable_mads", mads_enabled=enable_mads):
   #       for cruise_button_press in [True, False]:
