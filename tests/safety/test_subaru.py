@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import enum
 import unittest
+
+from shapely.speedups import enable
+
 from panda import Panda
 from panda.tests.libpanda import libpanda_py
 import panda.tests.safety.common as common
@@ -106,9 +109,20 @@ class TestSubaruSafetyBase(common.PandaCarSafetyTest):
     values = {"Cruise_Activated": enable}
     return self.packer.make_can_msg_panda("CruiseControl", self.ALT_MAIN_BUS, values)
 
-  def _lkas_button_msg(self, enabled):
-    values = {"LKAS_Dash_State": enabled}
-    return self.packer.make_can_msg_panda("ES_LKAS_State", 2, values)
+  def _lkas_button_msg(self, lkas_hud):
+    values = {"LKAS_Dash_State": lkas_hud}
+    return self.packer.make_can_msg_panda("ES_LKAS_State", SUBARU_CAM_BUS, values)
+
+  def test_enable_control_from_lkas_button_press(self):
+    for enable_mads in (True, False):
+      with self.subTest("enable_mads", mads_enabled=enable_mads):
+        self.safety.set_enable_mads(enable_mads, False)
+        for lkas_hud in range(4):
+          with self.subTest("lkas_hud", button_state=lkas_hud):
+            self._mads_states_cleanup()
+            self._rx(self._lkas_button_msg(lkas_hud))
+            self.assertEqual(enable_mads and lkas_hud != 0, self.safety.get_controls_allowed_lat())
+    self._mads_states_cleanup()
 
 
 class TestSubaruStockLongitudinalSafetyBase(TestSubaruSafetyBase):
