@@ -36,7 +36,7 @@ class MadsCommonBase(unittest.TestCase):
           with self.subTest("main_button_press", button_state=main_button_press):
             self._mads_states_cleanup()
             self.safety.set_main_button_press(main_button_press)
-            self._rx(self._user_brake_msg(False))
+            self._rx(self._speed_msg(0))
             self.assertEqual(enable_mads and main_button_press == 1, self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
@@ -48,7 +48,7 @@ class MadsCommonBase(unittest.TestCase):
           with self.subTest("lkas_button_press", button_state=lkas_button_press):
             self._mads_states_cleanup()
             self.safety.set_lkas_button_press(lkas_button_press)
-            self._rx(self._user_brake_msg(False))
+            self._rx(self._speed_msg(0))
             self.assertEqual(enable_mads and lkas_button_press == 1, self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
@@ -59,7 +59,7 @@ class MadsCommonBase(unittest.TestCase):
         self._mads_states_cleanup()
         self.safety.set_main_button_press(0)  # Meaning a message with those buttons was seen and the _prev inside is no longer -1
         self.safety.set_lkas_button_press(0)  # Meaning a message with those buttons was seen and the _prev inside is no longer -1
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         self.assertTrue(self.safety.get_mads_state_flags() & MadsStates.MAIN_BUTTON_AVAILABLE)
         self.assertTrue(self.safety.get_mads_state_flags() & MadsStates.LKAS_BUTTON_AVAILABLE)
     self._mads_states_cleanup()
@@ -106,21 +106,21 @@ class MadsCommonBase(unittest.TestCase):
         self._mads_states_cleanup()
 
         # Initial state - both flags should be unset
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         initial_flags = self.safety.get_mads_state_flags()
         self.assertEqual(initial_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.DEFAULT)  # Main button flag
         self.assertEqual(initial_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.DEFAULT)  # LKAS button flag
 
         # Set only main button
         self.safety.set_main_button_press(0)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         main_only_flags = self.safety.get_mads_state_flags()
         self.assertEqual(main_only_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.MAIN_BUTTON_AVAILABLE)  # Main button flag should be set
         self.assertEqual(main_only_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.DEFAULT)  # LKAS button flag should still be unset
 
         # Set LKAS button and verify both flags
         self.safety.set_lkas_button_press(0)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         both_flags = self.safety.get_mads_state_flags()
         self.assertEqual(both_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.MAIN_BUTTON_AVAILABLE)  # Main button flag should remain set
         self.assertEqual(both_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.LKAS_BUTTON_AVAILABLE)  # LKAS button flag should be set
@@ -131,7 +131,7 @@ class MadsCommonBase(unittest.TestCase):
 
         # Reset flags and verify they're cleared
         self._mads_states_cleanup()
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         cleared_flags = self.safety.get_mads_state_flags()
         self.assertEqual(cleared_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.DEFAULT)
         self.assertEqual(cleared_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.DEFAULT)
@@ -146,17 +146,17 @@ class MadsCommonBase(unittest.TestCase):
 
         # Set main button and verify flag
         self.safety.set_main_button_press(0)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         self.assertEqual(self.safety.get_mads_state_flags() & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.MAIN_BUTTON_AVAILABLE)
 
         # Reset main button to -1, flag should persist
         self.safety.set_main_button_press(-1)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         self.assertEqual(self.safety.get_mads_state_flags() & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.MAIN_BUTTON_AVAILABLE)
 
         # Set LKAS button and verify both flags
         self.safety.set_lkas_button_press(0)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         flags = self.safety.get_mads_state_flags()
         self.assertEqual(flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.MAIN_BUTTON_AVAILABLE)
         self.assertEqual(flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.LKAS_BUTTON_AVAILABLE)
@@ -172,7 +172,7 @@ class MadsCommonBase(unittest.TestCase):
 
         # Set main button flag only
         self.safety.set_main_button_press(0)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         main_flags = self.safety.get_mads_state_flags()
         self.assertEqual(main_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.MAIN_BUTTON_AVAILABLE)
         self.assertEqual(main_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.DEFAULT)
@@ -180,7 +180,7 @@ class MadsCommonBase(unittest.TestCase):
         # Reset flags and set LKAS only
         self._mads_states_cleanup()
         self.safety.set_lkas_button_press(0)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         lkas_flags = self.safety.get_mads_state_flags()
         self.assertEqual(lkas_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.DEFAULT)
         self.assertEqual(lkas_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.LKAS_BUTTON_AVAILABLE)
@@ -189,14 +189,14 @@ class MadsCommonBase(unittest.TestCase):
         self._mads_states_cleanup()
         self.safety.set_main_button_press(0)
         self.safety.set_lkas_button_press(0)
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         both_flags = self.safety.get_mads_state_flags()
         self.assertEqual(both_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.MAIN_BUTTON_AVAILABLE)
         self.assertEqual(both_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.LKAS_BUTTON_AVAILABLE)
 
         # Clear all flags and verify
         self._mads_states_cleanup()
-        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
         final_flags = self.safety.get_mads_state_flags()
         self.assertEqual(final_flags & MadsStates.MAIN_BUTTON_AVAILABLE, MadsStates.DEFAULT)
         self.assertEqual(final_flags & MadsStates.LKAS_BUTTON_AVAILABLE, MadsStates.DEFAULT)
