@@ -68,8 +68,8 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
     int addr = GET_ADDR(to_push);
   
     if (addr == 0x412) {
-      int lkas_hud_visible = (GET_BYTE(to_push, 0U) & 0xC0U) >> 6U;
-      if (lkas_hud_visible > 0) {
+      int lkas_hud = (GET_BYTE(to_push, 0U) & 0xC0U) >> 6U;
+      if (lkas_hud > 0) {
         lkas_button_press = MADS_BUTTON_PRESSED;
       }
     }
