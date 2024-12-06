@@ -307,7 +307,8 @@ void safety_tick(const safety_config *cfg) {
       cfg->rx_checks[i].status.lagging = lagging;
       if (lagging) {
         controls_allowed = false;
-        mads_exit_controls();
+        // TODO-SP: this should be handled (likely https://github.com/sunnypilot/panda/pull/48), not simply ignoring it 
+        // mads_exit_controls();
       }
 
       if (lagging || !is_msg_valid(cfg->rx_checks, i)) {
