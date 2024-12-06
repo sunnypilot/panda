@@ -139,7 +139,6 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
           self._mads_states_cleanup()
           with self.subTest("lkas_hud", button_state=lkas_hud):
             self._rx(self._lkas_button_msg(lkas_hud))
-            self._rx(self._speed_msg(0))  # For Toyota, we must send a msg to bus 0 because generic_rx_checks happen only there.
             self.assertEqual(enable_mads and lkas_hud in range(1, 4), self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
