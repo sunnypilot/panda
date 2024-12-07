@@ -79,7 +79,7 @@ static void m_mads_check_braking(bool is_braking) {
   if (is_braking && (!was_braking || *m_mads_state.is_vehicle_moving_ptr) && m_mads_state.disengage_lateral_on_brake) {
     mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
   }
-  
+
   m_mads_state.is_braking = is_braking;
 }
 
@@ -126,7 +126,7 @@ static void m_mads_try_allow_controls_lat(void) {
 // Function Implementations
 // ===============================
 
-inline const MADSState* get_mads_state(void) {
+inline const MADSState *get_mads_state(void) {
   return &m_mads_state;
 }
 
@@ -140,7 +140,7 @@ inline void mads_exit_controls(DisengageReason reason) {
   if (reason == MADS_DISENGAGE_REASON_ACC_MAIN_OFF) {
     m_mads_state.controls_requested_lat = false;
   }
-  
+
   if (m_mads_state.controls_allowed_lat) {
     m_mads_state.previous_disengage = m_mads_state.current_disengage;
     m_mads_state.current_disengage.reason = reason;
