@@ -106,7 +106,7 @@ static void m_create_pcm_main_cruise_events(BinaryStateTracking *state) {
 }
 
 static void m_update_button_state(ButtonStateTracking *button_state) {
-  if (*button_state->current == MADS_BUTTON_UNAVAILABLE) {
+  if (*button_state->current != MADS_BUTTON_UNAVAILABLE) {
     const bool pressed[] = {false, true};
     const ButtonState btn[] = {button_state->last, *button_state->current};
 
