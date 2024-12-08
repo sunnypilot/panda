@@ -15,17 +15,17 @@ MADSState m_mads_state;
 // ===============================
 
 static EdgeTransition m_get_edge_transition(bool current, bool last) {
-  EdgeTransition result;
+  EdgeTransition state;
 
   if (current && !last) {
-    result = MADS_EDGE_RISING;
+    state = MADS_EDGE_RISING;
   } else if (!current && last) {
-    result = MADS_EDGE_FALLING;
+    state = MADS_EDGE_FALLING;
   } else {
-    result = MADS_EDGE_NO_CHANGE;
+    state = MADS_EDGE_NO_CHANGE;
   }
 
-  return result;
+  return state;
 }
 
 static void m_mads_state_init(void) {
@@ -60,21 +60,21 @@ static void m_mads_state_init(void) {
 
 static bool m_can_allow_controls_lat(void) {
   const MADSState *state = get_mads_state();
-  bool result = false;
+  bool allowed = false;
   if (state->system_enabled) {
     switch (state->current_disengage.reason) {
       case MADS_DISENGAGE_REASON_BRAKE:
-        result = !state->is_braking && state->disengage_lateral_on_brake;
+        allowed = !state->is_braking && state->disengage_lateral_on_brake;
         break;
       case MADS_DISENGAGE_REASON_LAG:
       case MADS_DISENGAGE_REASON_BUTTON:
       case MADS_DISENGAGE_REASON_NONE:
       default:
-        result = true;
+        allowed = true;
         break;
     }
   }
-  return result;
+  return allowed;
 }
 
 static void m_mads_check_braking(bool is_braking) {
