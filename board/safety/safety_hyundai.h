@@ -171,8 +171,6 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
       brake_pressed = ((GET_BYTE(to_push, 5) >> 5U) & 0x3U) == 0x2U;
     }
 
-    acc_main_on = hyundai_longitudinal ? MADS_BUTTON_UNAVAILABLE : acc_main_on;
-
     bool stock_ecu_detected = (addr == 0x340);
 
     // If openpilot is controlling longitudinal we need to ensure the radar is turned off

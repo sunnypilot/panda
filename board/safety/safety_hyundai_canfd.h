@@ -111,8 +111,6 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
     }
   }
 
-  acc_main_on = hyundai_longitudinal ? MADS_BUTTON_UNAVAILABLE : acc_main_on;
-
   const int steer_addr = hyundai_canfd_hda2 ? hyundai_canfd_hda2_get_lkas_addr() : 0x12a;
   bool stock_ecu_detected = (addr == steer_addr) && (bus == 0);
   if (hyundai_longitudinal) {
