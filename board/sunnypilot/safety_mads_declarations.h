@@ -56,6 +56,7 @@ typedef struct {
   EdgeTransition transition;
   const bool *current;
   bool previous : 1;
+  bool available : 1;
 } BinaryStateTracking;
 
 typedef struct {

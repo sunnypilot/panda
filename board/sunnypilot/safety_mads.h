@@ -38,6 +38,9 @@ static void m_mads_state_init(void) {
   m_mads_state.system_enabled = false;
   m_mads_state.disengage_lateral_on_brake = true;
 
+  m_mads_state.acc_main.available = false;
+  m_mads_state.acc_main.transition = MADS_EDGE_NO_CHANGE;
+
   m_mads_state.main_button.last = MADS_BUTTON_UNAVAILABLE;
   m_mads_state.main_button.transition = MADS_EDGE_NO_CHANGE;
 
@@ -83,42 +86,68 @@ static void m_mads_check_braking(bool is_braking) {
   m_mads_state.is_braking = is_braking;
 }
 
-static void m_update_button_state(ButtonStateTracking *button_state) {
-  if (*button_state->current != MADS_BUTTON_UNAVAILABLE) {
-    button_state->transition = m_get_edge_transition(
-      *button_state->current == MADS_BUTTON_PRESSED,
-      button_state->last == MADS_BUTTON_PRESSED
-    );
-
-    if (button_state->transition == MADS_EDGE_RISING) {
-      m_mads_state.controls_requested_lat = !m_mads_state.controls_allowed_lat;
-      if (!m_mads_state.controls_requested_lat) {
-        mads_exit_controls(MADS_DISENGAGE_REASON_BUTTON);
-      }
-    }
-
-    button_state->last = *button_state->current;
-  }
-}
-
-static void m_update_binary_state(BinaryStateTracking *state) {
-  EdgeTransition transition = m_get_edge_transition(*state->current, state->previous);
-  if (transition == MADS_EDGE_RISING) {
-    m_mads_state.controls_requested_lat = true;
-  } else if (transition == MADS_EDGE_FALLING) {
-    mads_exit_controls(MADS_DISENGAGE_REASON_ACC_MAIN_OFF);
-  } else {
-    // Do nothing
-  }
-
-  state->previous = *state->current;
-}
-
 static void m_mads_try_allow_controls_lat(void) {
   if (m_mads_state.controls_requested_lat && !m_mads_state.controls_allowed_lat && m_can_allow_controls_lat()) {
     m_mads_state.controls_allowed_lat = true;
     m_mads_state.previous_disengage = m_mads_state.current_disengage;
     m_mads_state.current_disengage.reason = MADS_DISENGAGE_REASON_NONE;
+  }
+}
+
+static void m_create_pcm_main_cruise_events(BinaryStateTracking *state) {
+  state->transition = m_get_edge_transition(*state->current, state->previous);
+
+  // Invoke only once to evaluate if PCM main cruise is available
+  if (state->transition != MADS_EDGE_NO_CHANGE) {
+    state->available = true;
+  }
+
+  state->previous = *state->current;
+}
+
+static void m_update_button_state(ButtonStateTracking *button_state) {
+  if (*button_state->current == MADS_BUTTON_UNAVAILABLE)
+    return;
+
+  const bool pressed[] = {false, true};
+  const ButtonState btn[] = {button_state->last, *button_state->current};
+
+  if (*button_state->current != button_state->last) {
+    for (int i = 0; i < 2; i++) {
+      if (btn[i] != MADS_BUTTON_NOT_PRESSED) {
+        button_state->transition = pressed[i] ? MADS_EDGE_RISING : MADS_EDGE_FALLING;
+      }
+    }
+  }
+
+  button_state->last = *button_state->current;
+}
+
+static void m_update_state(void) {
+  m_update_button_state(&m_mads_state.main_button);
+  m_update_button_state(&m_mads_state.lkas_button);
+  m_create_pcm_main_cruise_events(&m_mads_state.acc_main);
+
+  // PCM main cruise
+  if (m_mads_state.acc_main.transition == MADS_EDGE_RISING) {
+    m_mads_state.controls_requested_lat = true;
+  } else if (m_mads_state.acc_main.transition == MADS_EDGE_FALLING) {
+    mads_exit_controls(MADS_DISENGAGE_REASON_ACC_MAIN_OFF);
+  } else {
+  }
+
+  // Main cruise button, only invoke if PCM main cruise is not available
+  if (m_mads_state.main_button.transition == MADS_EDGE_FALLING && !m_mads_state.acc_main.available) {
+    if (m_mads_state.controls_requested_lat) {
+      mads_exit_controls(MADS_DISENGAGE_REASON_BUTTON);
+    } else {
+      m_mads_state.controls_requested_lat = true;
+    }
+  }
+
+  // LKAS button
+  if (m_mads_state.lkas_button.transition == MADS_EDGE_RISING) {
+    m_mads_state.controls_allowed_lat = m_mads_state.controls_allowed_lat ? false : true;
   }
 }
 
@@ -166,9 +195,7 @@ inline void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_
     m_mads_state.state_flags |= MADS_STATE_FLAG_LKAS_BUTTON_AVAILABLE;
   }
 
-  m_update_button_state(&m_mads_state.main_button);
-  m_update_button_state(&m_mads_state.lkas_button);
-  m_update_binary_state(&m_mads_state.acc_main);
+  m_update_state();
 
   //TODO-SP: Should we use this?
   UNUSED(cruise_engaged);
