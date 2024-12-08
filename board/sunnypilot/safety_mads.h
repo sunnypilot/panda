@@ -106,21 +106,20 @@ static void m_create_pcm_main_cruise_events(BinaryStateTracking *state) {
 }
 
 static void m_update_button_state(ButtonStateTracking *button_state) {
-  if (*button_state->current == MADS_BUTTON_UNAVAILABLE)
-    return;
+  if (*button_state->current == MADS_BUTTON_UNAVAILABLE) {
+    const bool pressed[] = {false, true};
+    const ButtonState btn[] = {button_state->last, *button_state->current};
 
-  const bool pressed[] = {false, true};
-  const ButtonState btn[] = {button_state->last, *button_state->current};
-
-  if (*button_state->current != button_state->last) {
-    for (int i = 0; i < 2; i++) {
-      if (btn[i] != MADS_BUTTON_NOT_PRESSED) {
-        button_state->transition = pressed[i] ? MADS_EDGE_RISING : MADS_EDGE_FALLING;
+    if (*button_state->current != button_state->last) {
+      for (int i = 0; i < 2; i++) {
+        if (btn[i] != MADS_BUTTON_NOT_PRESSED) {
+          button_state->transition = pressed[i] ? MADS_EDGE_RISING : MADS_EDGE_FALLING;
+        }
       }
     }
-  }
 
-  button_state->last = *button_state->current;
+    button_state->last = *button_state->current;
+  }
 }
 
 static void m_update_state(void) {
@@ -137,7 +136,7 @@ static void m_update_state(void) {
   }
 
   // Main cruise button, only invoke if PCM main cruise is not available
-  if (m_mads_state.main_button.transition == MADS_EDGE_FALLING && !m_mads_state.acc_main.available) {
+  if ((m_mads_state.main_button.transition == MADS_EDGE_FALLING) && !m_mads_state.acc_main.available) {
     if (m_mads_state.controls_requested_lat) {
       mads_exit_controls(MADS_DISENGAGE_REASON_BUTTON);
     } else {
