@@ -11,7 +11,6 @@ typedef struct {
   const int DAS_6;
   const int LKAS_COMMAND;
   const int CRUISE_BUTTONS;
-  const int LKAS_HEARTBIT;
 } ChryslerAddrs;
 
 typedef enum {
@@ -177,8 +176,7 @@ static int chrysler_fwd_hook(int bus_num, int addr) {
   }
 
   // forward all messages from camera except LKAS messages
-  const bool is_lkas_heartbit = (addr == chrysler_addrs->LKAS_HEARTBIT) && (chrysler_platform == CHRYSLER_PACIFICA);
-  const bool is_lkas = ((addr == chrysler_addrs->LKAS_COMMAND) || (addr == chrysler_addrs->DAS_6) || is_lkas_heartbit);
+  const bool is_lkas = ((addr == chrysler_addrs->LKAS_COMMAND) || (addr == chrysler_addrs->DAS_6));
   if ((bus_num == 2) && !is_lkas){
     bus_fwd = 0;
   }
@@ -200,7 +198,6 @@ static safety_config chrysler_init(uint16_t param) {
     .DAS_6            = 0x2A6,  // LKAS HUD and auto headlight control from DASM
     .LKAS_COMMAND     = 0x292,  // LKAS controls from DASM
     .CRUISE_BUTTONS   = 0x23B,  // Cruise control buttons
-    .LKAS_HEARTBIT    = 0x2D9,  // LKAS HEARTBIT from DASM
   };
 
   // CAN messages for the 5th gen RAM DT platform
@@ -236,7 +233,6 @@ static safety_config chrysler_init(uint16_t param) {
     {CHRYSLER_ADDRS.CRUISE_BUTTONS, 0, 3},
     {CHRYSLER_ADDRS.LKAS_COMMAND, 0, 6},
     {CHRYSLER_ADDRS.DAS_6, 0, 8},
-    {CHRYSLER_ADDRS.LKAS_HEARTBIT, 0, 5},
   };
 
   static const CanMsg CHRYSLER_RAM_DT_TX_MSGS[] = {
