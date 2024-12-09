@@ -128,7 +128,7 @@ jobs:
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Mutation tests
-        timeout-minutes: 8
+        timeout-minutes: 5
         run: ${{ env.RUN }} "GIT_REF=${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/master-new') && github.event.before || 'origin/master' }} cd tests/safety && ./mutation.sh"
 
   static_analysis:

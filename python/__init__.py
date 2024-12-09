@@ -108,10 +108,6 @@ class ALTERNATIVE_EXPERIENCE:
   RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX = 8
   ALLOW_AEB = 16
 
-  # sunnypilot
-  ENABLE_MADS = 2 ** 10
-  DISABLE_DISENGAGE_LATERAL_ON_BRAKE = 2 ** 11
-
 class Panda:
 
   # matches cereal.car.CarParams.SafetyModel
@@ -167,7 +163,7 @@ class Panda:
   CAN_PACKET_VERSION = 4
   HEALTH_PACKET_VERSION = 16
   CAN_HEALTH_PACKET_VERSION = 5
-  HEALTH_STRUCT = struct.Struct("<IIIIIIIIBBBBBHBBBHfBBHBHHBB")
+  HEALTH_STRUCT = struct.Struct("<IIIIIIIIBBBBBHBBBHfBBHBHHB")
   CAN_HEALTH_STRUCT = struct.Struct("<BIBBBBBBBBIIIIIIIHHBBBIIII")
 
   F4_DEVICES = [HW_TYPE_WHITE_PANDA, HW_TYPE_GREY_PANDA, HW_TYPE_BLACK_PANDA, HW_TYPE_UNO, HW_TYPE_DOS]
@@ -223,7 +219,6 @@ class Panda:
   FLAG_SUBARU_PREGLOBAL_REVERSED_DRIVER_TORQUE = 1
 
   FLAG_NISSAN_ALT_EPS_BUS = 1
-  FLAG_NISSAN_LEAF = 512
 
   FLAG_GM_HW_CAM = 1
   FLAG_GM_HW_CAM_LONG = 2
@@ -658,7 +653,6 @@ class Panda:
       "sbu1_voltage_mV": a[23],
       "sbu2_voltage_mV": a[24],
       "som_reset_triggered": a[25],
-      "controls_allowed_lat": a[26],
     }
 
   @ensure_can_health_packet_version

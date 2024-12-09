@@ -106,21 +106,6 @@ class TestSubaruSafetyBase(common.PandaCarSafetyTest):
     values = {"Cruise_Activated": enable}
     return self.packer.make_can_msg_panda("CruiseControl", self.ALT_MAIN_BUS, values)
 
-  def _lkas_button_msg(self, lkas_hud):
-    values = {"LKAS_Dash_State": lkas_hud}
-    return self.packer.make_can_msg_panda("ES_LKAS_State", SUBARU_CAM_BUS, values)
-
-  def test_enable_control_from_lkas_button_press(self):
-    for enable_mads in (True, False):
-      with self.subTest("enable_mads", mads_enabled=enable_mads):
-        for lkas_hud in range(4):
-          self.safety.set_enable_mads(enable_mads, False)
-          self._mads_states_cleanup()
-          with self.subTest("lkas_hud", button_state=lkas_hud):
-            self._rx(self._lkas_button_msg(lkas_hud))
-            self.assertEqual(enable_mads and lkas_hud in range(1, 4), self.safety.get_controls_allowed_lat())
-    self._mads_states_cleanup()
-
 
 class TestSubaruStockLongitudinalSafetyBase(TestSubaruSafetyBase):
   def _cancel_msg(self, cancel, cruise_throttle=0):

@@ -64,17 +64,6 @@ static bool toyota_get_quality_flag_valid(const CANPacket_t *to_push) {
 static void toyota_rx_hook(const CANPacket_t *to_push) {
   const int TOYOTA_LTA_MAX_ANGLE = 1657;  // EPS only accepts up to 94.9461
 
-  if (GET_BUS(to_push) == 2U) {
-    int addr = GET_ADDR(to_push);
-  
-    if (addr == 0x412) {
-      int lkas_hud = (GET_BYTE(to_push, 0U) & 0xC0U) >> 6U;
-      if ((lkas_hud >= 1) && (lkas_hud <= 3)) {
-        lkas_button_press = MADS_BUTTON_PRESSED;
-      }
-    }
-  }
-
   if (GET_BUS(to_push) == 0U) {
     int addr = GET_ADDR(to_push);
 
@@ -148,10 +137,6 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
       vehicle_moving = speed != 0;
 
       UPDATE_VEHICLE_SPEED(speed / 4.0 * 0.01 / 3.6);
-    }
-
-    if (addr == 0x1D3) {
-      acc_main_on = GET_BIT(to_push, 15U);
     }
 
     bool stock_ecu_detected = addr == 0x2E4;  // STEERING_LKA

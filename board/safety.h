@@ -3,8 +3,6 @@
 #include "safety_declarations.h"
 #include "can.h"
 
-#include "sunnypilot/safety_mads.h"
-
 // include the safety policies.
 #include "safety/safety_defaults.h"
 #include "safety/safety_honda.h"
@@ -112,10 +110,6 @@ uint16_t current_safety_mode = SAFETY_SILENT;
 uint16_t current_safety_param = 0;
 static const safety_hooks *current_hooks = &nooutput_hooks;
 safety_config current_safety_config;
-
-static bool is_lat_active(void) {
-  return controls_allowed || mads_is_lateral_control_allowed_by_mads();
-}
 
 static bool is_msg_valid(RxCheck addr_list[], int index) {
   bool valid = true;
@@ -307,7 +301,6 @@ void safety_tick(const safety_config *cfg) {
       cfg->rx_checks[i].status.lagging = lagging;
       if (lagging) {
         controls_allowed = false;
-        mads_exit_controls();
       }
 
       if (lagging || !is_msg_valid(cfg->rx_checks, i)) {
@@ -350,7 +343,6 @@ void generic_rx_checks(bool stock_ecu_detected) {
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
     relay_malfunction_set();
   }
-  mads_state_update(&vehicle_moving, &acc_main_on, brake_pressed || regen_braking, cruise_engaged_prev);
 }
 
 static void relay_malfunction_reset(void) {
@@ -609,7 +601,7 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   bool violation = false;
   uint32_t ts = microsecond_timer_get();
 
-  if (is_lat_active()) {
+  if (controls_allowed) {
     // *** global torque limit check ***
     violation |= max_limit_check(desired_torque, limits.max_steer, -limits.max_steer);
 
@@ -636,7 +628,7 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   }
 
   // no torque if controls is not allowed
-  if (!is_lat_active() && (desired_torque != 0)) {
+  if (!controls_allowed && (desired_torque != 0)) {
     violation = true;
   }
 
@@ -678,7 +670,7 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   }
 
   // reset to 0 if either controls is not allowed or there's a violation
-  if (violation || !is_lat_active()) {
+  if (violation || !controls_allowed) {
     valid_steer_req_count = 0;
     invalid_steer_req_count = 0;
     desired_torque_last = 0;
@@ -694,7 +686,7 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
 bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const SteeringLimits limits) {
   bool violation = false;
 
-  if (is_lat_active() && steer_control_enabled) {
+  if (controls_allowed && steer_control_enabled) {
     // convert floating point angle rate limits to integers in the scale of the desired angle on CAN,
     // add 1 to not false trigger the violation. also fudge the speed by 1 m/s so rate limits are
     // always slightly above openpilot's in case we read an updated speed in between angle commands
@@ -737,7 +729,7 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
   }
 
   // No angle control allowed when controls are not allowed
-  violation |= !is_lat_active() && steer_control_enabled;
+  violation |= !controls_allowed && steer_control_enabled;
 
   return violation;
 }
