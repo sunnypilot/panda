@@ -224,6 +224,7 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
+  # Unified Engagement Mode tests
   def test_enable_lateral_control_with_controls_allowed_rising_edge(self):
     try:
       for enable_mads in (True, False):
