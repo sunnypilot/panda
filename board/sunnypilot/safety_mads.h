@@ -119,7 +119,6 @@ static void m_update_button_state(ButtonStateTracking *button_state) {
   }
 }
 
-// Main cruise
 static void m_update_binary_state(BinaryStateTracking *state) {
   state->transition = m_get_edge_transition(*state->current, state->previous);
   state->previous = *state->current;
@@ -198,6 +197,7 @@ inline void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_
 
   m_mads_update_state();
 
+  // TODO-SP: Refactor to utilize m_update_binary_state
   m_mads_check_braking(is_braking);
   m_mads_try_allow_controls_lat();
 }
