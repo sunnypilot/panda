@@ -124,7 +124,7 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
   def _main_cruise_button_msg(self, enabled):
     return self._button_msg(0, enabled)
 
-  def test_acc_main_state_from_stock_scc_message(self):
+  def test_pcm_main_cruise_state_availability(self):
     """Test that ACC main state is correctly set when receiving 0x420 message, toggling HYUNDAI_LONG flag"""
     prior_safety_mode = self.safety.get_current_safety_mode()
     prior_safety_param = self.safety.get_current_safety_param()
@@ -162,7 +162,7 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
     self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, Panda.FLAG_HYUNDAI_CAMERA_SCC)
     self.safety.init_tests()
 
-  def test_acc_main_state_from_stock_scc_message(self):
+  def test_pcm_main_cruise_state_availability(self):
     """
     Test that ACC main state is correctly set when receiving 0x420 message.
     For camera SCC, ACC main should always be on when receiving 0x420 message
