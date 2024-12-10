@@ -167,15 +167,11 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
     Test that ACC main state is correctly set when receiving 0x420 message.
     For camera SCC, ACC main should always be on when receiving 0x420 message
     """
-    prior_safety_mode = self.safety.get_current_safety_mode()
-    prior_safety_param = self.safety.get_current_safety_param()
 
     for should_turn_acc_main_on in (True, False):
       with self.subTest("acc_main_on", should_turn_acc_main_on=should_turn_acc_main_on):
         self._rx(self._acc_state_msg(should_turn_acc_main_on))
         self.assertEqual(should_turn_acc_main_on, self.safety.get_acc_main_on())
-    # Restore original safety mode and param
-    self.safety.set_safety_hooks(prior_safety_mode, prior_safety_param)
 
 
 class TestHyundaiLegacySafety(TestHyundaiSafety):
