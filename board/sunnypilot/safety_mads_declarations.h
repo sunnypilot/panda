@@ -115,6 +115,7 @@ extern MADSState m_mads_state;
 
 extern const MADSState* get_mads_state(void);
 extern void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed, bool unified_engagement_mode);
+extern void mads_get_alternative_experience(const int *mode);
 extern void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, const bool *op_allowed, bool is_braking);
 extern void mads_exit_controls(DisengageReason reason);
 extern bool mads_is_lateral_control_allowed_by_mads(void);
