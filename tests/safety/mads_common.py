@@ -241,3 +241,60 @@ class MadsCommonBase(unittest.TestCase):
               self.assertEqual(enable_mads and unified_engagement_mode, self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
+
+  def test_enable_lateral_control_with_controls_allowed_transitions(self):
+    """Test lateral control behavior with controls_allowed transitions in unified engagement mode"""
+    try:
+      for enable_mads in (True, False):
+        with self.subTest("enable_mads", mads_enabled=enable_mads):
+          for unified_engagement_mode in (True, False):
+            with self.subTest("unified_engagement_mode", unified_engagement_mode=unified_engagement_mode):
+              for controls_allowed in (True, False):
+                with self.subTest("initial_controls_allowed", initial_controls=controls_allowed):
+                  self._mads_states_cleanup()
+                  # Ensure controls are off before enabling features
+                  self.safety.set_controls_allowed(False)
+                  self._rx(self._speed_msg(0))
+
+                  # Now set up MADS parameters
+                  self.safety.set_enable_mads(enable_mads, False, False, unified_engagement_mode)
+                  expected_lat = False
+
+                  # Verify clean initial state
+                  self.assertFalse(self.safety.get_controls_allowed_lat(),
+                                   "Lateral control should be disabled in clean initial state")
+
+                  # Set desired initial state
+                  self.safety.set_controls_allowed(controls_allowed)
+                  self._rx(self._speed_msg(0))
+                  # Only enable on rising edge
+                  if controls_allowed and unified_engagement_mode and enable_mads:
+                    expected_lat = True
+                  self.assertEqual(expected_lat, self.safety.get_controls_allowed_lat(),
+                                   f"Expected lat: [{expected_lat}] in initial state with controls_allowed: [{controls_allowed}]")
+
+                  # Test transition to opposite state
+                  prev_lat = expected_lat  # Remember previous state
+                  self.safety.set_controls_allowed(not controls_allowed)
+                  self._rx(self._speed_msg(0))
+                  # Only enable on rising edge
+                  if not controls_allowed and unified_engagement_mode and enable_mads:
+                    expected_lat = True
+                  else:
+                    expected_lat = prev_lat  # Maintain previous state unless rising edge
+                  self.assertEqual(expected_lat, self.safety.get_controls_allowed_lat(),
+                                   f"Expected lat: [{expected_lat}] after controls_allowed transition [{controls_allowed}] -> [{not controls_allowed}]")
+
+                  # Test transition back to initial state
+                  prev_lat = expected_lat  # Remember previous state
+                  self.safety.set_controls_allowed(controls_allowed)
+                  self._rx(self._speed_msg(0))
+                  # Only enable on rising edge
+                  if controls_allowed and unified_engagement_mode and enable_mads:
+                    expected_lat = True
+                  else:
+                    expected_lat = prev_lat  # Maintain previous state unless rising edge
+                  self.assertEqual(expected_lat, self.safety.get_controls_allowed_lat(),
+                                   f"Expected lat: [{expected_lat}] after controls_allowed transition [{not controls_allowed}] -> [{controls_allowed}]")
+    finally:
+      self._mads_states_cleanup()
