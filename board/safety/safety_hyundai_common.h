@@ -40,10 +40,6 @@ bool hyundai_alt_limits = false;
 extern bool hyundai_escc;
 bool hyundai_escc = false;
 
-// MADS
-extern bool hyundai_mads_button_allowed;
-bool hyundai_mads_button_allowed = false;
-
 extern bool hyundai_longitudinal_main_cruise_toggleable;
 bool hyundai_longitudinal_main_cruise_toggleable = false;
 
@@ -61,8 +57,7 @@ void hyundai_common_init(uint16_t param) {
   const int HYUNDAI_PARAM_CANFD_HDA2 = 16;
   const int HYUNDAI_PARAM_ALT_LIMITS = 64; // TODO: shift this down with the rest of the common flags
   const int HYUNDAI_PARAM_ESCC = 512;
-  const int HYUNDAI_PARAM_MADS_BUTTON_ALLOWED = 1024;
-  const int HYUNDAI_PARAM_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE = 2048;
+  const int HYUNDAI_PARAM_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE = 1024;
 
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
@@ -70,7 +65,6 @@ void hyundai_common_init(uint16_t param) {
   hyundai_canfd_hda2 = GET_FLAG(param, HYUNDAI_PARAM_CANFD_HDA2);
   hyundai_alt_limits = GET_FLAG(param, HYUNDAI_PARAM_ALT_LIMITS);
   hyundai_escc = GET_FLAG(param, HYUNDAI_PARAM_ESCC);
-  hyundai_mads_button_allowed = GET_FLAG(param, HYUNDAI_PARAM_MADS_BUTTON_ALLOWED);
   hyundai_longitudinal_main_cruise_toggleable = GET_FLAG(param, HYUNDAI_PARAM_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE);
 
   hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
