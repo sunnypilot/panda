@@ -3,6 +3,7 @@ import unittest
 import panda.tests.safety.common as common
 from panda.tests.libpanda import libpanda_py
 from panda.tests.safety.common import make_msg
+from panda import Panda
 
 
 class Buttons:
@@ -140,36 +141,52 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
   def test_main_cruise_button(self):
     """Test that main cruise button correctly toggles acc_main_on state"""
+    default_safety_mode = self.safety.get_current_safety_mode()
+    default_safety_param = self.safety.get_current_safety_param()
+
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
-        # Test initial state
-        self._mads_states_cleanup()
-        self.safety.set_enable_mads(enable_mads, False)
+        for main_cruise_allowed in (True, False):
+          with self.subTest("main_cruise_allowed", main_cruise_allowed=main_cruise_allowed):
+            for main_cruise_toggleable in (True, False):
+              with self.subTest("main_cruise_toggleable", main_cruise_toggleable=main_cruise_toggleable):
+                main_cruise_toggleable_flag = Panda.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE if main_cruise_toggleable else 0
+                self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
-        self.assertFalse(self.safety.get_acc_main_on())
+                # Test initial state
+                self._mads_states_cleanup()
+                self.safety.set_enable_mads(enable_mads, False, main_cruise_allowed, False)
 
-        self._rx(self._main_cruise_button_msg(0))  # Set initial state
-        self._rx(self._main_cruise_button_msg(1))  # Press button
-        self.assertTrue(self.safety.get_acc_main_on())  # Should be on after press
+                self.assertFalse(self.safety.get_acc_main_on())
 
-        self._rx(self._main_cruise_button_msg(0))  # Release button
-        self.assertTrue(self.safety.get_acc_main_on())  # Should stay on
+                self._rx(self._main_cruise_button_msg(0))
+                self._rx(self._main_cruise_button_msg(1))
+                self.assertEqual(enable_mads and main_cruise_allowed and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
 
-        self._rx(self._main_cruise_button_msg(1))  # Press again
-        self.assertFalse(self.safety.get_acc_main_on())  # Should toggle off
+                self._rx(self._main_cruise_button_msg(0))
+                self.assertEqual(enable_mads and main_cruise_allowed and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
 
-        for _ in range(10):
-          self._rx(self._main_cruise_button_msg(1))
-          self.assertFalse(self.safety.get_acc_main_on())
+                self._rx(self._main_cruise_button_msg(1))
+                self.assertFalse(self.safety.get_controls_allowed_lat())
 
-        self._mads_states_cleanup()
+                for _ in range(10):
+                  self._rx(self._main_cruise_button_msg(1))
+                  self.assertFalse(self.safety.get_controls_allowed_lat())
+    self._mads_states_cleanup()
+    self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
   def test_acc_main_sync_mismatches_reset(self):
     """Test that acc_main_on_mismatches resets properly on rising edge of main button"""
+    default_safety_mode = self.safety.get_current_safety_mode()
+    default_safety_param = self.safety.get_current_safety_param()
+
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
+        main_cruise_toggleable_flag = Panda.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE
+        self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
+
         self._mads_states_cleanup()
-        self.safety.set_enable_mads(enable_mads, False)
+        self.safety.set_enable_mads(enable_mads, False, True, False)
 
         # Initial state
         self._rx(self._main_cruise_button_msg(0))
@@ -189,13 +206,20 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.assertFalse(self.safety.get_acc_main_on())
         self.assertEqual(0, self.safety.get_acc_main_on_mismatches())
     self._mads_states_cleanup()
+    self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
   def test_acc_main_sync_mismatch_counter(self):
     """Test mismatch counter behavior and disengagement"""
+    default_safety_mode = self.safety.get_current_safety_mode()
+    default_safety_param = self.safety.get_current_safety_param()
+
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
+        main_cruise_toggleable_flag = Panda.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE
+        self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
+
         self._mads_states_cleanup()
-        self.safety.set_enable_mads(enable_mads, False)
+        self.safety.set_enable_mads(enable_mads, False, True, False)
         self.safety.set_controls_allowed_lat(True)
 
         # Start with matched states
@@ -223,13 +247,20 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self._tx(self._tx_acc_state_msg(False))
         self.assertEqual(0, self.safety.get_acc_main_on_mismatches())
     self._mads_states_cleanup()
+    self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
   def test_acc_main_sync_mismatch_recovery(self):
+    default_safety_mode = self.safety.get_current_safety_mode()
+    default_safety_param = self.safety.get_current_safety_param()
+
     """Test that mismatch counter resets when states resync"""
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
+        main_cruise_toggleable_flag = Panda.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE
+        self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
+
         self._mads_states_cleanup()
-        self.safety.set_enable_mads(enable_mads, False)
+        self.safety.set_enable_mads(enable_mads, False, True, False)
 
         # Create initial mismatch
         self._rx(self._main_cruise_button_msg(1))  # Press button
@@ -241,6 +272,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self._tx(self._tx_acc_state_msg(True))  # Match acc_main_on_tx to acc_main_on
         self.assertEqual(0, self.safety.get_acc_main_on_mismatches())
     self._mads_states_cleanup()
+    self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
   def test_tester_present_allowed(self):
     """

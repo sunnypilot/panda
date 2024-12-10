@@ -33,7 +33,9 @@ static void m_mads_state_init(void) {
   m_mads_state.mads_button.current = NULL;
 
   m_mads_state.system_enabled = false;
-  m_mads_state.disengage_lateral_on_brake = true;
+  m_mads_state.disengage_lateral_on_brake = false;
+  m_mads_state.main_cruise_allowed = false;
+  m_mads_state.unified_engagement_mode = false;
 
   m_mads_state.acc_main.previous = false;
   m_mads_state.acc_main.transition = MADS_EDGE_NO_CHANGE;
@@ -108,7 +110,7 @@ static void m_mads_try_allow_controls_lat(void) {
 // Use buttons or main cruise state transition properties to request lateral control
 static void m_mads_update_state(void) {
   // Main cruise
-  if (m_mads_state.acc_main.transition == MADS_EDGE_RISING) {
+  if ((m_mads_state.acc_main.transition == MADS_EDGE_RISING) && m_mads_state.main_cruise_allowed) {
     m_mads_state.controls_requested_lat = true;
   } else if (m_mads_state.acc_main.transition == MADS_EDGE_FALLING) {
     m_mads_state.controls_requested_lat = false;
@@ -125,7 +127,7 @@ static void m_mads_update_state(void) {
     }
   }
 
-  if (m_mads_state.op_controls_allowed.transition == MADS_EDGE_RISING) {
+  if ((m_mads_state.op_controls_allowed.transition == MADS_EDGE_RISING) && m_mads_state.unified_engagement_mode) {
     m_mads_state.controls_requested_lat = true;
   }
 }
@@ -138,10 +140,12 @@ inline const MADSState *get_mads_state(void) {
   return &m_mads_state;
 }
 
-inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
+inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed, bool unified_engagement_mode) {
   m_mads_state_init();
   m_mads_state.system_enabled = enabled;
   m_mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
+  m_mads_state.main_cruise_allowed = main_cruise_allowed;
+  m_mads_state.unified_engagement_mode = unified_engagement_mode;
 }
 
 inline void mads_exit_controls(DisengageReason reason) {

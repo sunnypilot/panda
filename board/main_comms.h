@@ -250,7 +250,9 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         alternative_experience = req->param1;
         bool mads_enabled = (alternative_experience & ALT_EXP_ENABLE_MADS) != 0;
         bool disengage_lateral_on_brake = !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_LATERAL_ON_BRAKE);
-        mads_set_system_state(mads_enabled, disengage_lateral_on_brake);
+        bool main_cruise_allowed = (alternative_experience & ALT_EXP_MAIN_CRUISE_ALLOWED) != 0;
+        bool unified_engagement_mode = (alternative_experience & ALT_EXP_UNIFIED_ENGAGEMENT_MODE) != 0;
+        mads_set_system_state(mads_enabled, disengage_lateral_on_brake, main_cruise_allowed, unified_engagement_mode);
       }
       break;
     // **** 0xe0: uart read
