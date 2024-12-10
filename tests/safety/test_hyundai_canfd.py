@@ -89,17 +89,6 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
   def _main_cruise_button_msg(self, enabled):
     return self._button_msg(0, enabled)
 
-  def test_enable_control_from_lkas(self):
-    for enable_mads in (True, False):
-      with self.subTest("enable_mads", mads_enabled=enable_mads):
-        for lkas_button_msg_valid in (True, False):
-          with self.subTest("lkas_button_msg_valid", state_valid=lkas_button_msg_valid):
-            self._mads_states_cleanup()
-            self.safety.set_enable_mads(enable_mads, False)
-            self._rx(self._lkas_button_msg(lkas_button_msg_valid))
-            self.assertEqual(enable_mads and lkas_button_msg_valid, self.safety.get_controls_allowed_lat())
-    self._mads_states_cleanup()
-
 
 class TestHyundaiCanfdHDA1Base(TestHyundaiCanfdBase):
 

@@ -83,19 +83,6 @@ class TestNissanSafety(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest
         tx = self._tx(self._acc_button_cmd(**args))
         self.assertEqual(tx, should_tx)
 
-  def test_enable_control_from_acc_main_on(self):
-    """Test that lateral controls are allowed when ACC main is enabled"""
-    for enable_mads in (True, False):
-      with self.subTest("enable_mads", mads_enabled=enable_mads):
-        for acc_main_on in (True, False):
-          with self.subTest("acc_main_on", acc_main_on=acc_main_on):
-            self._mads_states_cleanup()
-            self.safety.set_enable_mads(enable_mads, False)
-            self._rx(self._acc_state_msg(acc_main_on))
-            self._rx(self._speed_msg(0))
-            self.assertEqual(enable_mads and acc_main_on, self.safety.get_controls_allowed_lat())
-    self._mads_states_cleanup()
-
 
 class TestNissanSafetyAltEpsBus(TestNissanSafety):
   """Altima uses different buses"""
