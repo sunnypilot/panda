@@ -387,7 +387,7 @@ class TestHondaNidecPcmAltSafety(TestHondaNidecPcmSafety):
     self.__class__.cnt_button += 1
     return self.packer.make_can_msg_panda("SCM_BUTTONS", bus, values)
 
-  # TODO-SP: Understand why FLAG_HONDA_NIDEC_ALT cars are failing with
+  # TODO-SP: Understand why FLAG_HONDA_NIDEC_ALT cars are failing with the same signals
   def test_enable_control_allowed_with_mads_button_and_disable_with_main_cruise(self):
     raise unittest.SkipTest("Flaky test with Nidec Alternative PCM state")
 

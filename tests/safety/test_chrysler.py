@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+  #!/usr/bin/env python3
 import unittest
 from panda import Panda
 from panda.tests.libpanda import libpanda_py
@@ -71,9 +71,6 @@ class TestChryslerSafety(common.PandaCarSafetyTest, common.MotorTorqueSteeringSa
       # only one button at a time
       self.assertFalse(self._tx(self._button_msg(cancel=True, resume=True)))
       self.assertFalse(self._tx(self._button_msg(cancel=False, resume=False)))
-
-  def _main_cruise_button_msg(self, enabled):
-    raise unittest.SkipTest("Chrysler does not enable controls from cruise button press, we only enable controls from the PCM status message")
 
 
 class TestChryslerRamDTSafety(TestChryslerSafety):
