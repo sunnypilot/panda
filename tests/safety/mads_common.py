@@ -28,16 +28,32 @@ class MadsCommonBase(unittest.TestCase):
     try:
       for enable_mads in (True, False):
         with self.subTest("enable_mads", mads_enabled=enable_mads):
-          self._mads_states_cleanup()
-          self.safety.set_mads_params(enable_mads, False, False, False, False)
+          for always_allow_mads_button in (True, False):
+            with self.subTest("always_allow_mads_button", always_allow_mads_button=always_allow_mads_button):
+              self._mads_states_cleanup()
+              self.safety.set_mads_params(enable_mads, False, False, False, always_allow_mads_button)
 
-          self._rx(self._lkas_button_msg(True))
-          self._rx(self._lkas_button_msg(False))
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+              self._rx(self._lkas_button_msg(True))
+              self._rx(self._lkas_button_msg(False))
+              self.assertEqual(enable_mads and always_allow_mads_button, self.safety.get_controls_allowed_lat())
 
-          self._rx(self._lkas_button_msg(True))
-          self._rx(self._lkas_button_msg(False))
-          self.assertFalse(self.safety.get_controls_allowed_lat())
+              self._rx(self._lkas_button_msg(True))
+              self._rx(self._lkas_button_msg(False))
+              self.assertFalse(self.safety.get_controls_allowed_lat())
+
+          for acc_main_on in (True, False):
+            with self.subTest("acc_main_on", acc_main_on=acc_main_on):
+              self._mads_states_cleanup()
+              self.safety.set_mads_params(enable_mads, False, False, False, False)
+              self.safety.set_acc_main_on(acc_main_on)
+
+              self._rx(self._lkas_button_msg(True))
+              self._rx(self._lkas_button_msg(False))
+              self.assertEqual(enable_mads and acc_main_on, self.safety.get_controls_allowed_lat())
+
+              self._rx(self._lkas_button_msg(True))
+              self._rx(self._lkas_button_msg(False))
+              self.assertFalse(self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
 
@@ -67,11 +83,24 @@ class MadsCommonBase(unittest.TestCase):
         with self.subTest("enable_mads", mads_enabled=enable_mads):
           for mads_button_press in (-1, 0, 1):
             with self.subTest("mads_button_press", button_state=mads_button_press):
-              self._mads_states_cleanup()
-              self.safety.set_mads_params(enable_mads, False, False, False, False)
-              self.safety.set_mads_button_press(mads_button_press)
-              self._rx(self._speed_msg(0))
-              self.assertEqual(enable_mads and mads_button_press == 1, self.safety.get_controls_allowed_lat())
+              for always_allow_mads_button in (True, False):
+                with self.subTest("always_allow_mads_button", always_allow_mads_button=always_allow_mads_button):
+                  self._mads_states_cleanup()
+                  self.safety.set_mads_params(enable_mads, False, False, False, always_allow_mads_button)
+
+                  self.safety.set_mads_button_press(mads_button_press)
+                  self._rx(self._speed_msg(0))
+                  self.assertEqual(enable_mads and always_allow_mads_button and mads_button_press == 1, self.safety.get_controls_allowed_lat())
+
+              for acc_main_on in (True, False):
+                with self.subTest("acc_main_on", acc_main_on=acc_main_on):
+                  self._mads_states_cleanup()
+                  self.safety.set_mads_params(enable_mads, False, False, False, False)
+                  self.safety.set_acc_main_on(acc_main_on)
+
+                  self.safety.set_mads_button_press(mads_button_press)
+                  self._rx(self._speed_msg(0))
+                  self.assertEqual(enable_mads and acc_main_on and mads_button_press == 1, self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
 
@@ -254,6 +283,39 @@ class MadsCommonBase(unittest.TestCase):
               self._rx(self._speed_msg(0))
               self.assertTrue(self.safety.get_controls_allowed())
               self.assertEqual(enable_mads and unified_engagement_mode, self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+
+  def test_no_always_allow_mads_button(self):
+    try:
+      self._lkas_button_msg(False)
+    except NotImplementedError:
+      raise unittest.SkipTest("Skipping test because MADS button is not supported")
+
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, False, False, False, False)
+
+      self._rx(self._lkas_button_msg(True))
+      self._rx(self._lkas_button_msg(False))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+
+  def test_alternative_experience_always_allow_mads_button(self):
+    try:
+      self._lkas_button_msg(False)
+    except NotImplementedError:
+      raise unittest.SkipTest("Skipping test because MADS button is not supported")
+
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, False, False, False, True)
+
+      self._rx(self._lkas_button_msg(True))
+      self._rx(self._lkas_button_msg(False))
+      self._rx(self._speed_msg(0))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
 
