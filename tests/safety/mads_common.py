@@ -149,6 +149,38 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
+  def test_disengage_lateral_on_brake(self):
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, True, False, False, False)
+
+      self._rx(self._user_brake_msg(False))
+      self.safety.set_controls_requested_lat(True)
+      self.safety.set_controls_allowed_lat(True)
+
+      self._rx(self._user_brake_msg(True))
+      # Test we pause lateral
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+      # Make sure we can re-gain lateral actuation
+      self._rx(self._user_brake_msg(False))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+
+  def test_no_disengage_lateral_on_brake(self):
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, False, False, False, False)
+
+      self._rx(self._user_brake_msg(False))
+      self.safety.set_controls_requested_lat(True)
+      self.safety.set_controls_allowed_lat(True)
+
+      self._rx(self._user_brake_msg(True))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+
   def test_mads_button_press_with_acc_main_on(self):
     """Test that MADS button presses disengage controls when main cruise is on"""
     try:
