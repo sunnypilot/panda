@@ -12,7 +12,6 @@ typedef struct {
   const int LKAS_COMMAND;
   const int CRUISE_BUTTONS;
   const int LKAS_HEARTBIT;
-  const int LKAS_BUTTON;
   const int Center_Stack_1;
   const int Center_Stack_2;
   const int TRACTION_BUTTON;
