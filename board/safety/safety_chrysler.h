@@ -12,6 +12,10 @@ typedef struct {
   const int LKAS_COMMAND;
   const int CRUISE_BUTTONS;
   const int LKAS_HEARTBIT;
+  const int LKAS_BUTTON;
+  const int Center_Stack_1;
+  const int Center_Stack_2;
+  const int TRACTION_BUTTON;
 } ChryslerAddrs;
 
 typedef enum {
@@ -101,6 +105,19 @@ static void chrysler_rx_hook(const CANPacket_t *to_push) {
   // exit controls on rising edge of brake press
   if ((bus == 0) && (addr == chrysler_addrs->ESP_1)) {
     brake_pressed = ((GET_BYTE(to_push, 0U) & 0xFU) >> 2U) == 1U;
+  }
+
+  if ((chrysler_platform == CHRYSLER_PACIFICA) && (bus == 0) && (addr == chrysler_addrs->TRACTION_BUTTON)) {
+    mads_button_press = GET_BIT(to_push, 53U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
+  }
+
+  if ((chrysler_platform != CHRYSLER_PACIFICA) && (bus == 0)) {
+    if (addr == chrysler_addrs->Center_Stack_1) {
+      mads_button_press = GET_BIT(to_push, 53U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
+    }
+    if (addr == chrysler_addrs->Center_Stack_2) {
+      mads_button_press = GET_BIT(to_push, 57U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
+    }
   }
 
   generic_rx_checks((bus == 0) && (addr == chrysler_addrs->LKAS_COMMAND));
@@ -201,6 +218,7 @@ static safety_config chrysler_init(uint16_t param) {
     .LKAS_COMMAND     = 0x292,  // LKAS controls from DASM
     .CRUISE_BUTTONS   = 0x23B,  // Cruise control buttons
     .LKAS_HEARTBIT    = 0x2D9,  // LKAS HEARTBIT from DASM
+    .TRACTION_BUTTON  = 0x330,  // Traction control button
   };
 
   // CAN messages for the 5th gen RAM DT platform
@@ -213,6 +231,8 @@ static safety_config chrysler_init(uint16_t param) {
     .DAS_6            = 0xFA,   // LKAS HUD and auto headlight control from DASM
     .LKAS_COMMAND     = 0xA6,   // LKAS controls from DASM
     .CRUISE_BUTTONS   = 0xB1,   // Cruise control buttons
+    .Center_Stack_1   = 0xDD,   // Center stack buttons1
+    .Center_Stack_2   = 0x28A,  // Center stack buttons2
   };
 
   static RxCheck chrysler_ram_dt_rx_checks[] = {
@@ -256,6 +276,8 @@ static safety_config chrysler_init(uint16_t param) {
     .DAS_6            = 0x275,  // LKAS HUD and auto headlight control from DASM
     .LKAS_COMMAND     = 0x276,  // LKAS controls from DASM
     .CRUISE_BUTTONS   = 0x23A,  // Cruise control buttons
+    .Center_Stack_1   = 0x330,  // Center stack buttons1
+    .Center_Stack_2   = 0x28A,  // Center stack buttons2
   };
 
   static RxCheck chrysler_ram_hd_rx_checks[] = {
