@@ -393,7 +393,6 @@ class MadsCommonBase(unittest.TestCase):
     try:
       self._acc_state_msg(False)
     except NotImplementedError:
-      self._mads_states_cleanup()
       raise unittest.SkipTest("Skipping test because _acc_state_msg is not implemented for this car")
 
     try:
@@ -417,3 +416,61 @@ class MadsCommonBase(unittest.TestCase):
       self.assertFalse(self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
+
+  def test_mads_button_combinations(self):
+    """Test various MADS engagement/disengagement button combinations.
+    Tests different combinations of main cruise and MADS buttons for lateral control.
+
+    Scenarios:
+    1. Main cruise toggle only
+    2. Main cruise then MADS button
+    3. MADS button then main cruise
+    4. MADS button toggle only
+    """
+    scenarios = [
+      ("main_cruise_toggle", "cruise", True, "cruise", False),
+      ("main_cruise_then_mads_button", "cruise", True, "lkas", False),
+      ("mads_button_then_main_cruise", "lkas", True, "cruise", True),
+      ("mads_button_toggle", "lkas", True, "lkas", False),
+    ]
+
+    try:
+      self._lkas_button_msg(False)
+    except NotImplementedError:
+      raise unittest.SkipTest("Skipping test because MADS button is not supported")
+
+    try:
+      self._acc_state_msg(False)
+    except NotImplementedError:
+      raise unittest.SkipTest("Skipping test because _acc_state_msg is not implemented for this car")
+
+    for name, first_button, first_expected, second_button, second_expected in scenarios:
+      with self.subTest(msg=name):
+        try:
+          self._mads_states_cleanup()
+          self.safety.set_mads_params(True, False, True, False, True)
+
+          # First action
+          if first_button == "cruise":
+            self._rx(self._acc_state_msg(True))
+          else:  # MADS button
+            self._rx(self._lkas_button_msg(True))
+            self._rx(self._lkas_button_msg(False))
+
+          self._rx(self._speed_msg(0))
+          self.assertEqual(first_expected, self.safety.get_controls_allowed_lat(),
+                           f"{name}: Expected lat control {first_expected} after first action")
+
+          # Second action
+          if second_button == "cruise":
+            self._rx(self._acc_state_msg(False))
+          else:  # MADS button
+            self._rx(self._lkas_button_msg(True))
+            self._rx(self._lkas_button_msg(False))
+
+          self._rx(self._speed_msg(0))
+          self.assertEqual(second_expected, self.safety.get_controls_allowed_lat(),
+                           f"{name}: Expected lat control {second_expected} after second action")
+
+        finally:
+          self._mads_states_cleanup()
