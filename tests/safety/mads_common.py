@@ -181,6 +181,31 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
+  def test_allow_engage_with_brake_pressed(self):
+    try:
+      for enable_mads in (True, False):
+        with self.subTest("enable_mads", enable_mads=enable_mads):
+          for disengage_lateral_on_brake in (True, False):
+            with self.subTest("disengage_lateral_on_brake", disengage_lateral_on_brake=disengage_lateral_on_brake):
+              for main_cruise_allowed in (True, False):
+                with self.subTest("main_cruise_allowed", main_cruise_allowed=main_cruise_allowed):
+                  for unified_engagement_mode in (True, False):
+                    with self.subTest("unified_engagement_mode", unified_engagement_mode=unified_engagement_mode):
+                      for always_allow_mads_button in (True, False):
+                        with self.subTest("always_allow_mads_button", always_allow_mads_button=always_allow_mads_button):
+                          self._mads_states_cleanup()
+                          self.safety.set_mads_params(enable_mads, disengage_lateral_on_brake, main_cruise_allowed,
+                                                      unified_engagement_mode, always_allow_mads_button)
+
+                          self._rx(self._user_brake_msg(True))
+                          self.safety.set_controls_requested_lat(True)
+                          self._rx(self._user_brake_msg(True))
+                          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+                          self._rx(self._user_brake_msg(True))
+                          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+
   def test_mads_button_press_with_acc_main_on(self):
     """Test that MADS button presses disengage controls when main cruise is on"""
     try:
