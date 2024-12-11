@@ -181,10 +181,10 @@ inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake,
                                   bool unified_engagement_mode, bool always_allow_mads_button) {
   m_mads_state_init();
   m_mads_state.system_enabled = enabled;
-  m_mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
-  m_mads_state.main_cruise_allowed = main_cruise_allowed;
-  m_mads_state.unified_engagement_mode = unified_engagement_mode;
-  m_mads_state.always_allow_mads_button = always_allow_mads_button;
+  m_mads_state.disengage_lateral_on_brake = enabled && disengage_lateral_on_brake;
+  m_mads_state.main_cruise_allowed = enabled && main_cruise_allowed;
+  m_mads_state.unified_engagement_mode = enabled && unified_engagement_mode;
+  m_mads_state.always_allow_mads_button = enabled && always_allow_mads_button;
 }
 
 inline void mads_exit_controls(DisengageReason reason) {

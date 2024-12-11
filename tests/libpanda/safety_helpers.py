@@ -71,6 +71,8 @@ def setup_safety_helpers(ffi):
   int get_temp_debug(void);
   bool get_mads_acc_main_prev(void);
   uint32_t get_acc_main_on_mismatches(void);
+  void set_mads_params(bool enable_mads, bool disengage_lat_on_brake, bool main_cruise_allowed,
+                       bool unified_engagement_mode, bool always_allow_mads_button);
   """)
 
 class PandaSafety(Protocol):
@@ -142,4 +144,7 @@ class PandaSafety(Protocol):
   def mads_get_current_disengage_reason(self) -> int: ...
   def mads_get_previous_disengage_reason(self) -> int: ...
   def get_acc_main_on_mismatches(self) -> int: ...
+
+  def set_mads_params(self, enable_mads: bool, disengage_lat_on_brake: bool, main_cruise_allowed: bool,
+                      unified_engagement_mode: bool, always_allow_mads_button: bool) -> None: ...
   # def get_temp_debug(self) -> int: ...

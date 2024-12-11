@@ -241,6 +241,28 @@ void set_controls_requested_lat(bool c){
   m_mads_state.controls_requested_lat = c;
 }
 
+void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool main_cruise_allowed,
+                     bool unified_engagement_mode, bool always_allow_mads_button){
+  alternative_experience = 0;
+  if (enable_mads) {
+    alternative_experience |= ALT_EXP_ENABLE_MADS;
+
+    if (!disengage_lateral_on_brake)
+      alternative_experience |= ALT_EXP_DISABLE_DISENGAGE_LATERAL_ON_BRAKE;
+
+    if (main_cruise_allowed)
+      alternative_experience |= ALT_EXP_MAIN_CRUISE_ALLOWED;
+
+    if (unified_engagement_mode)
+      alternative_experience |= ALT_EXP_UNIFIED_ENGAGEMENT_MODE;
+
+    if (always_allow_mads_button)
+      alternative_experience |= ALT_EXP_ALWAYS_ALLOW_MADS_BUTTON;
+  }
+
+  mads_set_alternative_experience(&alternative_experience);
+}
+
 //int get_temp_debug(void){
 //  return temp_debug;
 //}
