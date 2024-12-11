@@ -62,6 +62,7 @@ static void m_mads_state_init(void) {
   m_mads_state.disengage_lateral_on_brake = false;
   m_mads_state.main_cruise_allowed = false;
   m_mads_state.unified_engagement_mode = false;
+  m_mads_state.always_allow_mads_button = false;
 
   m_mads_state.acc_main.previous = false;
   m_mads_state.acc_main.transition = MADS_EDGE_NO_CHANGE;
@@ -144,7 +145,7 @@ static void m_mads_update_state(void) {
   }
 
   // MADS button
-  if (m_mads_state.mads_button.transition == MADS_EDGE_RISING) {
+  if ((m_mads_state.mads_button.transition == MADS_EDGE_RISING) && (m_mads_state.acc_main.current || m_mads_state.always_allow_mads_button)) {
     m_mads_state.controls_requested_lat = !m_mads_state.controls_allowed_lat;
 
     if (!m_mads_state.controls_requested_lat) {
@@ -170,16 +171,20 @@ inline void mads_get_alternative_experience(const int *mode) {
   bool disengage_lateral_on_brake = !(*mode & ALT_EXP_DISABLE_DISENGAGE_LATERAL_ON_BRAKE);
   bool main_cruise_allowed = (*mode & ALT_EXP_MAIN_CRUISE_ALLOWED) != 0;
   bool unified_engagement_mode = (*mode & ALT_EXP_UNIFIED_ENGAGEMENT_MODE) != 0;
+  bool always_allow_mads_button = (*mode & ALT_EXP_ALWAYS_ALLOW_MADS_BUTTON) != 0;
 
-  mads_set_system_state(mads_enabled, disengage_lateral_on_brake, main_cruise_allowed, unified_engagement_mode);
+  mads_set_system_state(mads_enabled, disengage_lateral_on_brake, main_cruise_allowed,
+                        unified_engagement_mode, always_allow_mads_button);
 }
 
-inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed, bool unified_engagement_mode) {
+inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed,
+                                  bool unified_engagement_mode, bool always_allow_mads_button) {
   m_mads_state_init();
   m_mads_state.system_enabled = enabled;
   m_mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
   m_mads_state.main_cruise_allowed = main_cruise_allowed;
   m_mads_state.unified_engagement_mode = unified_engagement_mode;
+  m_mads_state.always_allow_mads_button = always_allow_mads_button;
 }
 
 inline void mads_exit_controls(DisengageReason reason) {

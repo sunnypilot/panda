@@ -55,7 +55,8 @@ def setup_safety_helpers(ffi):
   void set_honda_bosch_long(bool c);
   int get_honda_hw(void);
 
-  void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake, bool main_cruise_allowed, bool unified_engagement_mode);
+  void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake, bool main_cruise_allowed,
+                       bool unified_engagement_mode, bool always_allow_mads_button);
   bool get_enable_mads(void);
   bool get_disengage_lat_on_brake(void);
   void set_mads_button_press(int mads_button_press);
@@ -130,8 +131,8 @@ class PandaSafety(Protocol):
   def set_honda_bosch_long(self, c: bool) -> None: ...
   def get_honda_hw(self) -> int: ...
 
-  def set_enable_mads(self, enable_mads: bool, disengage_lat_on_brake: bool,
-                      main_cruise_allowed: bool, unified_engagement_mode: bool) -> None: ...
+  def set_enable_mads(self, enable_mads: bool, disengage_lat_on_brake: bool, main_cruise_allowed: bool,
+                      unified_engagement_mode: bool, always_allow_mads_button: bool) -> None: ...
 
   def set_mads_button_press(self, mads_button_press: int) -> None: ...
   def get_enable_mads(self) -> bool: ...

@@ -361,7 +361,7 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
           for main_button_msg_valid in (True, False):
             with self.subTest("main_button_msg_valid", state_valid=main_button_msg_valid):
               self._mads_states_cleanup()
-              self.safety.set_enable_mads(enable_mads, False, True, False)
+              self.safety.set_enable_mads(enable_mads, False, True, False, False)
               self._rx(self._pcm_status_msg(main_button_msg_valid))
               self.assertEqual(enable_mads and main_button_msg_valid, self.safety.get_controls_allowed_lat())
     finally:
