@@ -1,8 +1,6 @@
 import unittest
 from abc import abstractmethod
 
-from panda.python import ALTERNATIVE_EXPERIENCE
-
 
 class MadsCommonBase(unittest.TestCase):
   @abstractmethod
@@ -147,7 +145,7 @@ class MadsCommonBase(unittest.TestCase):
             with self.subTest("disengage on brake", disengage_on_brake=disengage_on_brake):
               self._mads_states_cleanup()
               self.safety.set_mads_params(enable_mads, disengage_on_brake, False, False, False)
-              self.assertEqual(enable_mads and disengage_on_brake, self.safety.get_disengage_lat_on_brake(), f"alt_exp={self.safety.get_alternative_experience()}")
+              self.assertEqual(enable_mads and disengage_on_brake, self.safety.get_disengage_lat_on_brake())
     finally:
       self._mads_states_cleanup()
 

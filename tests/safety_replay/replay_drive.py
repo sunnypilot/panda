@@ -3,6 +3,7 @@ import argparse
 import os
 from collections import Counter, defaultdict
 
+from panda.python import ALTERNATIVE_EXPERIENCE
 from panda.tests.libpanda import libpanda_py
 from panda.tests.safety_replay.helpers import package_can_msg, init_segment
 
@@ -18,6 +19,7 @@ DEBUG_VARS = {
   'mads_acc_main': lambda safety: safety.get_mads_acc_main(),
 }
 
+
 # replay a drive to check for safety violations
 def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   safety = libpanda_py.libpanda
@@ -25,7 +27,14 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   err = safety.set_safety_hooks(safety_mode, param)
   assert err == 0, "invalid safety mode: %d" % safety_mode
   safety.set_alternative_experience(alternative_experience)
-  safety.set_enable_mads(bool(alternative_experience & 1024), not bool(alternative_experience & 2048))
+
+  _enable_mads = alternative_experience & ALTERNATIVE_EXPERIENCE.ENABLE_MADS
+  _disable_disengage_lateral_on_brake = not (alternative_experience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_LATERAL_ON_BRAKE)
+  _main_cruise_allowed = alternative_experience & ALTERNATIVE_EXPERIENCE.MAIN_CRUISE_ALLOWED
+  _unified_engagement_mode = alternative_experience & ALTERNATIVE_EXPERIENCE.UNIFIED_ENGAGEMENT_MODE
+  _always_allow_mads_button = alternative_experience & ALTERNATIVE_EXPERIENCE.ALWAYS_ALLOW_MADS_BUTTON
+  safety.set_mads_params(_enable_mads, _disable_disengage_lateral_on_brake, _main_cruise_allowed,
+                         _unified_engagement_mode, _always_allow_mads_button)
 
   if segment:
     init_segment(safety, lr, safety_mode, param)
@@ -122,6 +131,7 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   print("mads enabled:", safety.get_enable_mads())
 
   return tx_controls_blocked == 0 and tx_controls_lat_blocked == 0 and rx_invalid == 0 and not safety_tick_rx_invalid
+
 
 if __name__ == "__main__":
   from openpilot.tools.lib.logreader import LogReader

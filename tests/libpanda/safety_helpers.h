@@ -47,11 +47,6 @@ bool get_controls_requested_lat(void){
   return get_mads_state()->controls_requested_lat;
 }
 
-void set_enable_mads(bool enable_mads, bool disengage_lat_on_brake, bool main_cruise_allowed,
-                     bool unified_engagement_mode, bool always_allow_mads_button){
-  mads_set_system_state(enable_mads, disengage_lat_on_brake, main_cruise_allowed, unified_engagement_mode, always_allow_mads_button);
-}
-
 bool get_enable_mads(void){
   return get_mads_state()->system_enabled;
 }
