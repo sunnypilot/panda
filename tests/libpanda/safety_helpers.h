@@ -51,7 +51,7 @@ bool get_enable_mads(void){
   return get_mads_state()->system_enabled;
 }
 
-bool get_disengage_lat_on_brake(void){
+bool get_disengage_lateral_on_brake(void){
   return get_mads_state()->disengage_lateral_on_brake;
 }
 
