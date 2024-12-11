@@ -42,8 +42,8 @@ RUN cd /tmp/ && \
     git clone --depth 1 https://github.com/sunnypilot/opendbc opendbc_repo && \
     cd opendbc_repo && git fetch origin $OPENDBC_REF && git checkout FETCH_HEAD && rm -rf .git/ && \
     pip3 install --break-system-packages --no-cache-dir Cython numpy  && \
-    scons -j8 --minimal opendbc/ && \
-    ln -s $PWD/opendbc $PYTHONPATH/opendbc
+    ln -s $PWD/opendbc $PYTHONPATH/opendbc && \
+    scons -j8 --minimal opendbc/
 
 # for Jenkins
 COPY README.md panda.tar.* /tmp/
