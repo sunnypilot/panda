@@ -299,3 +299,64 @@ class MadsCommonBase(unittest.TestCase):
                                    f"Expected lat: [{expected_lat}] after controls_allowed transition [{not controls_allowed}] -> [{controls_allowed}]")
     finally:
       self._mads_states_cleanup()
+
+  def test_alternative_experience_flag_setting(self):
+    """Test setting of alternative experience flags"""
+    try:
+      self._mads_states_cleanup()
+
+      # Test main_cruise_allowed behavior
+      # 1. Set all bits EXCEPT main_cruise_allowed
+      self.safety.set_mads_params(True, False, False, True, True)
+      self.assertFalse(self.safety.get_main_cruise_allowed(),
+                       "main_cruise_allowed should be false when its bit is not set")
+
+      # 2. Set ONLY main_cruise_allowed
+      self.safety.set_mads_params(True, False, True, False, False)
+      self.assertTrue(self.safety.get_main_cruise_allowed(),
+                      "main_cruise_allowed should be true when its bit is set")
+
+      # Test always_allow_mads_button behavior
+      # 1. Set all bits EXCEPT always_allow_mads_button
+      self.safety.set_mads_params(True, False, True, True, False)
+      self.assertFalse(self.safety.get_always_allow_mads_button(),
+                       "always_allow_mads_button should be false when its bit is not set")
+
+      # 2. Set ONLY always_allow_mads_button
+      self.safety.set_mads_params(True, False, False, False, True)
+      self.assertTrue(self.safety.get_always_allow_mads_button(),
+                      "always_allow_mads_button should be true when its bit is set")
+
+      # Test zero handling
+      # 1. No bits set
+      self.safety.set_mads_params(False, False, False, False, False)
+      self.assertFalse(self.safety.get_main_cruise_allowed(),
+                       "main_cruise_allowed should be false when no bits are set")
+      self.assertFalse(self.safety.get_always_allow_mads_button(),
+                       "always_allow_mads_button should be false when no bits are set")
+
+      # 2. Only MADS enabled with target bits false
+      self.safety.set_mads_params(True, False, False, False, False)
+      self.assertFalse(self.safety.get_main_cruise_allowed(),
+                       "main_cruise_allowed should be false when only MADS is enabled")
+      self.assertFalse(self.safety.get_always_allow_mads_button(),
+                       "always_allow_mads_button should be false when only MADS is enabled")
+
+      # Test all combinations for always_allow_mads_button (to catch != vs == mutation)
+      test_combinations = [
+        (True, False, False, False, False),  # MADS only
+        (True, False, True, False, False),   # MADS + cruise
+        (True, False, False, True, False),   # MADS + unified
+        (True, False, False, False, True),   # MADS + button
+        (True, False, True, True, True),     # all enabled
+      ]
+
+      for params in test_combinations:
+        self.safety.set_mads_params(*params)
+        self.assertEqual(params[4], self.safety.get_always_allow_mads_button(),
+                         f"always_allow_mads_button mismatch for params {params}")
+        self.assertEqual(params[2], self.safety.get_main_cruise_allowed(),
+                         f"main_cruise_allowed mismatch for params {params}")
+
+    finally:
+      self._mads_states_cleanup()

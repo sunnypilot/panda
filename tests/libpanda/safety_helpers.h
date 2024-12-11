@@ -55,6 +55,18 @@ bool get_disengage_lateral_on_brake(void){
   return get_mads_state()->disengage_lateral_on_brake;
 }
 
+bool get_main_cruise_allowed(void){
+  return get_mads_state()->main_cruise_allowed;
+}
+
+bool get_unified_engagement_mode(void){
+  return get_mads_state()->unified_engagement_mode;
+}
+
+bool get_always_allow_mads_button(void){
+  return get_mads_state()->always_allow_mads_button;
+}
+
 int get_alternative_experience(void){
   return alternative_experience;
 }
