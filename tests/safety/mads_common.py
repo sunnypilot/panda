@@ -137,7 +137,7 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
-  def test_mads_disengage_lateral_on_brake_setup(self):
+  def test_disengage_lateral_on_brake_setup(self):
     try:
       for enable_mads in (True, False):
         with self.subTest("enable_mads", enable_mads=enable_mads):
