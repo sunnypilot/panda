@@ -248,7 +248,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       // you can only set this if you are in a non car safety mode
       if (!is_car_safety_mode(current_safety_mode)) {
         alternative_experience = req->param1;
-        mads_get_alternative_experience(&alternative_experience);
+        mads_set_alternative_experience(&alternative_experience);
       }
       break;
     // **** 0xe0: uart read
