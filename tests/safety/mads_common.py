@@ -238,49 +238,6 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
-  def test_enable_control_allowed_with_mads_button_and_disable_with_main_cruise(self):
-    """Tests main cruise and MADS button state transitions.
-
-      Sequence:
-      1. Main cruise off -> on
-      2. MADS button disengage
-      3. MADS button engage
-      4. Main cruise off
-
-    """
-    try:
-      self._lkas_button_msg(False)
-    except NotImplementedError:
-      raise unittest.SkipTest("Skipping test because MADS button is not supported")
-
-    try:
-      self._acc_state_msg(False)
-    except NotImplementedError:
-      self._mads_states_cleanup()
-      raise unittest.SkipTest("Skipping test because _acc_state_msg is not implemented for this car")
-
-    try:
-      self._mads_states_cleanup()
-      self.safety.set_mads_params(True, False, True, False, False)
-
-      self._rx(self._acc_state_msg(True))
-      self._rx(self._speed_msg(0))
-      self.assertTrue(self.safety.get_controls_allowed_lat())
-
-      self._rx(self._lkas_button_msg(True))
-      self._rx(self._lkas_button_msg(False))
-      self.assertFalse(self.safety.get_controls_allowed_lat())
-
-      self._rx(self._lkas_button_msg(True))
-      self._rx(self._lkas_button_msg(False))
-      self.assertTrue(self.safety.get_controls_allowed_lat())
-
-      self._rx(self._acc_state_msg(False))
-      self._rx(self._speed_msg(0))
-      self.assertFalse(self.safety.get_controls_allowed_lat())
-    finally:
-      self._mads_states_cleanup()
-
   # Unified Engagement Mode tests
   def test_enable_lateral_control_with_controls_allowed_rising_edge(self):
     try:
@@ -415,5 +372,48 @@ class MadsCommonBase(unittest.TestCase):
         self.assertEqual(params[2], self.safety.get_main_cruise_allowed(),
                          f"main_cruise_allowed mismatch for params {params}")
 
+    finally:
+      self._mads_states_cleanup()
+
+  def test_enable_control_allowed_with_mads_button_and_disable_with_main_cruise(self):
+    """Tests main cruise and MADS button state transitions.
+
+      Sequence:
+      1. Main cruise off -> on
+      2. MADS button disengage
+      3. MADS button engage
+      4. Main cruise off
+
+    """
+    try:
+      self._lkas_button_msg(False)
+    except NotImplementedError:
+      raise unittest.SkipTest("Skipping test because MADS button is not supported")
+
+    try:
+      self._acc_state_msg(False)
+    except NotImplementedError:
+      self._mads_states_cleanup()
+      raise unittest.SkipTest("Skipping test because _acc_state_msg is not implemented for this car")
+
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, False, True, False, False)
+
+      self._rx(self._acc_state_msg(True))
+      self._rx(self._speed_msg(0))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+
+      self._rx(self._lkas_button_msg(True))
+      self._rx(self._lkas_button_msg(False))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+
+      self._rx(self._lkas_button_msg(True))
+      self._rx(self._lkas_button_msg(False))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+
+      self._rx(self._acc_state_msg(False))
+      self._rx(self._speed_msg(0))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
