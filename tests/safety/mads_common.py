@@ -141,7 +141,7 @@ class MadsCommonBase(unittest.TestCase):
     try:
       for enable_mads in (True, False):
         with self.subTest("enable_mads", enable_mads=enable_mads):
-          for disengage_on_brake in True, False:
+          for disengage_on_brake in (True, False):
             with self.subTest("disengage on brake", disengage_on_brake=disengage_on_brake):
               self._mads_states_cleanup()
               self.safety.set_enable_mads(enable_mads, disengage_on_brake, False, False, False)
