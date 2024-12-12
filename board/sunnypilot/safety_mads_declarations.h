@@ -119,3 +119,4 @@ extern void mads_set_alternative_experience(const int *mode);
 extern void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, const bool *op_allowed, bool is_braking);
 extern void mads_exit_controls(DisengageReason reason);
 extern bool mads_is_lateral_control_allowed_by_mads(void);
+extern void m_mads_heartbeat_engaged_check(void);
