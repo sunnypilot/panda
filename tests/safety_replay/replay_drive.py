@@ -30,12 +30,10 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
 
   _enable_mads = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.ENABLE_MADS)
   _disengage_lateral_on_brake = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.DISENGAGE_LATERAL_ON_BRAKE)
-  _main_cruise_allowed = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.MAIN_CRUISE_ALLOWED)
-  safety.set_mads_params(_enable_mads, _disengage_lateral_on_brake, _main_cruise_allowed)
+  safety.set_mads_params(_enable_mads, _disengage_lateral_on_brake)
   print("alternative experience:")
   print(f"  enable mads: {_enable_mads}")
   print(f"  disengage lateral on brake: {_disengage_lateral_on_brake}")
-  print(f"  main cruise allowed: {_main_cruise_allowed}")
 
   if segment:
     init_segment(safety, lr, safety_mode, param)
