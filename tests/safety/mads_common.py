@@ -154,18 +154,6 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
-  def test_controls_allowed_must_always_enable_lateral_control(self):
-    try:
-      for enable_mads in (True, False):
-        with self.subTest("enable_mads", enable_mads=enable_mads):
-          self.safety.set_mads_params(enable_mads, False, False, False, False)
-          for controls_allowed in (True, False):
-            with self.subTest("controls allowed", controls_allowed=controls_allowed):
-              self.safety.set_controls_allowed(controls_allowed)
-              self.assertEqual(self.safety.get_controls_allowed(), self.safety.get_lat_active())
-    finally:
-      self._mads_states_cleanup()
-
   def test_disengage_lateral_on_brake_setup(self):
     try:
       for enable_mads in (True, False):
@@ -284,6 +272,28 @@ class MadsCommonBase(unittest.TestCase):
               self.assertTrue(self.safety.get_controls_allowed())
               self.assertEqual(enable_mads and unified_engagement_mode, self.safety.get_controls_allowed_lat())
     finally:
+      self._mads_states_cleanup()
+
+  def test_controls_allowed_must_always_enable_lateral_control(self):
+    try:
+      for enable_mads in (True, False):
+        with self.subTest("enable_mads", enable_mads=enable_mads):
+          for unified_engagement_mode in (True, False):
+            with self.subTest("unified_engagement_mode", unified_engagement_mode=unified_engagement_mode):
+              for controls_allowed in (True, False):
+                with self.subTest("controls allowed", controls_allowed=controls_allowed):
+                  self._mads_states_cleanup()
+                  self.safety.set_mads_params(enable_mads, False, False, unified_engagement_mode, False)
+                  self.safety.set_controls_allowed(False)
+                  self._rx(self._speed_msg(0))
+
+                  self.safety.set_controls_allowed(controls_allowed)
+                  self._rx(self._speed_msg(0))
+                  expected_lat = enable_mads and unified_engagement_mode and self.safety.get_controls_allowed()
+                  self.assertEqual(expected_lat, self.safety.get_controls_allowed_lat())
+    finally:
+      self.safety.set_controls_allowed(False)
+      self._rx(self._speed_msg(0))
       self._mads_states_cleanup()
 
   def test_no_always_allow_mads_button(self):
