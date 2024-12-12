@@ -169,7 +169,7 @@ inline const MADSState *get_mads_state(void) {
 
 inline void mads_set_alternative_experience(const int *mode) {
   bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
-  bool disengage_lateral_on_brake = !(*mode & ALT_EXP_DISABLE_DISENGAGE_LATERAL_ON_BRAKE);
+  bool disengage_lateral_on_brake = (*mode & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
   bool main_cruise_allowed = (*mode & ALT_EXP_MAIN_CRUISE_ALLOWED) != 0;
   bool unified_engagement_mode = (*mode & ALT_EXP_UNIFIED_ENGAGEMENT_MODE) != 0;
   bool always_allow_mads_button = (*mode & ALT_EXP_ALWAYS_ALLOW_MADS_BUTTON) != 0;
