@@ -49,6 +49,7 @@ typedef enum __attribute__((packed)) {
   MADS_DISENGAGE_REASON_BUTTON = 3,
   MADS_DISENGAGE_REASON_ACC_MAIN_OFF = 4,
   MADS_DISENGAGE_REASON_NON_PCM_ACC_MAIN_DESYNC = 5,
+  MADS_DISENGAGE_REASON_HEARTBEAT_ENGAGED_MISMATCH = 6,
 } DisengageReason;
 
 // ===============================

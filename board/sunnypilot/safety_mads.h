@@ -86,6 +86,7 @@ static bool m_can_allow_controls_lat(void) {
       case MADS_DISENGAGE_REASON_BRAKE:
         allowed = !state->is_braking && state->disengage_lateral_on_brake;
         break;
+      case MADS_DISENGAGE_REASON_HEARTBEAT_ENGAGED_MISMATCH:
       case MADS_DISENGAGE_REASON_NON_PCM_ACC_MAIN_DESYNC:
       case MADS_DISENGAGE_REASON_ACC_MAIN_OFF:
       case MADS_DISENGAGE_REASON_LAG:
@@ -149,6 +150,17 @@ static void m_mads_update_state(void) {
   }
 }
 
+static void m_mads_heartbeat_engaged_check(void) {
+  if (m_mads_state.controls_allowed_lat && !heartbeat_engaged_mads) {
+    heartbeat_engaged_mads_mismatches += 1U;
+    if (heartbeat_engaged_mads_mismatches >= 3U) {
+      mads_exit_controls(MADS_DISENGAGE_REASON_HEARTBEAT_ENGAGED_MISMATCH);
+    }
+  } else {
+    heartbeat_engaged_mads_mismatches = 0U;
+  }
+}
+
 // ===============================
 // Function Implementations
 // ===============================
@@ -201,4 +213,5 @@ inline void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_
   // TODO-SP: Refactor to utilize m_update_binary_state
   m_mads_check_braking(is_braking);
   m_mads_try_allow_controls_lat();
+  m_mads_heartbeat_engaged_check();
 }
