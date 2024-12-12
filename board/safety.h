@@ -114,7 +114,7 @@ static const safety_hooks *current_hooks = &nooutput_hooks;
 safety_config current_safety_config;
 
 static bool is_lat_active(void) {
-  return (controls_allowed && !mads_system_enabled()) || mads_is_lateral_control_allowed_by_mads();
+  return controls_allowed || mads_is_lateral_control_allowed_by_mads();
 }
 
 static bool is_msg_valid(RxCheck addr_list[], int index) {

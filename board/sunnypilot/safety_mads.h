@@ -178,10 +178,6 @@ inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake,
   m_mads_state.always_allow_mads_button = enabled && always_allow_mads_button;
 }
 
-inline bool mads_system_enabled(void) {
-  return m_mads_state.system_enabled;
-}
-
 inline void mads_exit_controls(DisengageReason reason) {
   if (m_mads_state.controls_allowed_lat) {
     m_mads_state.previous_disengage = m_mads_state.current_disengage;
