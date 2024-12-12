@@ -153,6 +153,7 @@ static void m_mads_update_state(void) {
     }
   }
 
+  // Unified Engagement Mode
   if ((m_mads_state.op_controls_allowed.transition == MADS_EDGE_RISING) && m_mads_state.unified_engagement_mode) {
     m_mads_state.controls_requested_lat = true;
   }
