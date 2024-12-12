@@ -261,6 +261,10 @@ void set_heartbeat_engaged_mads(bool c){
   heartbeat_engaged_mads = c;
 }
 
+int get_heartbeat_engaged_mads_mismatches(void){
+  return heartbeat_engaged_mads_mismatches;
+}
+
 int get_mads_transition(void){
   return m_mads_state.acc_main.transition;
 }

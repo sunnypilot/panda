@@ -242,3 +242,58 @@ class MadsCommonBase(unittest.TestCase):
           self.assertFalse(self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
+
+  def test_heartbeat_engaged_mads_mismatches(self):
+    """Test reset logic using controls_allowed_lat and heartbeat_engaged_mads"""
+    self._mads_states_cleanup()
+    self.safety.set_mads_params(True, False)
+
+    # Test exact mismatch boundary conditions
+    self.safety.set_controls_allowed_lat(True)
+    self.safety.set_heartbeat_engaged_mads(False)
+
+    # Should stay engaged through first two rx messages
+    self._rx(self._speed_msg(0))
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    self.assertEqual(1, self.safety.get_heartbeat_engaged_mads_mismatches())
+
+    self._rx(self._speed_msg(0))
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    self.assertEqual(2, self.safety.get_heartbeat_engaged_mads_mismatches())
+
+    # Third rx should trigger disengagement
+    self._rx(self._speed_msg(0))
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+    self.assertEqual(3, self.safety.get_heartbeat_engaged_mads_mismatches())
+    self.assertEqual(6, self.safety.mads_get_current_disengage_reason())
+
+    # Test reset condition
+    self.safety.set_heartbeat_engaged_mads(True)
+    self._rx(self._speed_msg(0))
+    self.assertEqual(0, self.safety.get_heartbeat_engaged_mads_mismatches())
+
+    # Test all combinations
+    for controls_allowed_lat in (True, False):
+      with self.subTest("controls_allowed_lat", controls_allowed_lat=controls_allowed_lat):
+        for heartbeat_engaged_mads in (True, False):
+          with self.subTest("heartbeat_engaged_mads", heartbeat_engaged_mads=heartbeat_engaged_mads):
+            self._mads_states_cleanup()
+            self.safety.set_mads_params(True, False)
+            self.safety.set_controls_allowed_lat(controls_allowed_lat)
+            self.safety.set_heartbeat_engaged_mads(heartbeat_engaged_mads)
+
+            # Send three rx messages and check state after each
+            for i in range(3):
+              self._rx(self._speed_msg(0))
+              if controls_allowed_lat and not heartbeat_engaged_mads:
+                expected_control = i < 2  # Should stay engaged for first two rx
+                expected_mismatches = i + 1
+                self.assertEqual(expected_control, self.safety.get_controls_allowed_lat(),
+                                 f"Incorrect control state after rx {i + 1}")
+                self.assertEqual(expected_mismatches, self.safety.get_heartbeat_engaged_mads_mismatches(),
+                                 f"Incorrect mismatch count after rx {i + 1}")
+              else:
+                self.assertEqual(controls_allowed_lat, self.safety.get_controls_allowed_lat())
+                self.assertEqual(0, self.safety.get_heartbeat_engaged_mads_mismatches())
+
+    self._mads_states_cleanup()
