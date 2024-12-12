@@ -17,6 +17,7 @@ class MadsCommonBase(unittest.TestCase):
     self.safety.set_controls_requested_lat(False)
     self.safety.set_acc_main_on(False)
     self.safety.set_mads_params(False, False)
+    self.safety.set_heartbeat_engaged_mads(True)
 
   def test_enable_and_disable_control_allowed_with_mads_button(self):
     """Toggle MADS with MADS button"""

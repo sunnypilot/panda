@@ -252,6 +252,10 @@ void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake){
   mads_set_alternative_experience(&alternative_experience);
 }
 
+void set_heartbeat_engaged_mads(bool c){
+  heartbeat_engaged_mads = c;
+}
+
 //int get_temp_debug(void){
 //  return temp_debug;
 //}

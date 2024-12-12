@@ -70,6 +70,7 @@ def setup_safety_helpers(ffi):
   bool get_mads_acc_main_prev(void);
   uint32_t get_acc_main_on_mismatches(void);
   void set_mads_params(bool enable_mads, bool disengage_lat_on_brake);
+  void set_heartbeat_engaged_mads(bool c);
   """)
 
 class PandaSafety(Protocol):
@@ -140,4 +141,5 @@ class PandaSafety(Protocol):
   def get_acc_main_on_mismatches(self) -> int: ...
 
   def set_mads_params(self, enable_mads: bool, disengage_lat_on_brake: bool) -> None: ...
+  def set_heartbeat_engaged_mads(self, c: bool) -> None: ...
   # def get_temp_debug(self) -> int: ...
