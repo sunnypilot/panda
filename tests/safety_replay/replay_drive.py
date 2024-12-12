@@ -28,11 +28,11 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   assert err == 0, "invalid safety mode: %d" % safety_mode
   safety.set_alternative_experience(alternative_experience)
 
-  _enable_mads = alternative_experience & ALTERNATIVE_EXPERIENCE.ENABLE_MADS
-  _disable_disengage_lateral_on_brake = not (alternative_experience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_LATERAL_ON_BRAKE)
-  _main_cruise_allowed = alternative_experience & ALTERNATIVE_EXPERIENCE.MAIN_CRUISE_ALLOWED
-  _unified_engagement_mode = alternative_experience & ALTERNATIVE_EXPERIENCE.UNIFIED_ENGAGEMENT_MODE
-  _always_allow_mads_button = alternative_experience & ALTERNATIVE_EXPERIENCE.ALWAYS_ALLOW_MADS_BUTTON
+  _enable_mads = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.ENABLE_MADS)
+  _disable_disengage_lateral_on_brake = bool(not (alternative_experience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_LATERAL_ON_BRAKE))
+  _main_cruise_allowed = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.MAIN_CRUISE_ALLOWED)
+  _unified_engagement_mode = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.UNIFIED_ENGAGEMENT_MODE)
+  _always_allow_mads_button = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.ALWAYS_ALLOW_MADS_BUTTON)
   safety.set_mads_params(_enable_mads, _disable_disengage_lateral_on_brake, _main_cruise_allowed,
                          _unified_engagement_mode, _always_allow_mads_button)
 
