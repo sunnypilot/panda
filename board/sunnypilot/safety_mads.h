@@ -150,10 +150,6 @@ static void m_mads_heartbeat_engaged_check(void) {
 // Function Implementations
 // ===============================
 
-inline const MADSState *get_mads_state(void) {
-  return &m_mads_state;
-}
-
 inline void mads_set_alternative_experience(const int *mode) {
   bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
   bool disengage_lateral_on_brake = (*mode & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;

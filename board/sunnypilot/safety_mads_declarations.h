@@ -116,7 +116,6 @@ extern bool heartbeat_engaged_mads;
 // External Function Declarations (kept as needed)
 // ===============================
 
-extern const MADSState* get_mads_state(void);
 extern void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed);
 extern void mads_set_alternative_experience(const int *mode);
 extern void mads_state_update(bool op_vehicle_moving, bool op_acc_main, bool op_allowed, bool is_braking);
