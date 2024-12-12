@@ -146,10 +146,6 @@ static void m_mads_update_state(void) {
   // MADS button
   if (m_mads_state.mads_button.transition == MADS_EDGE_RISING) {
     m_mads_state.controls_requested_lat = true;
-
-    if (!m_mads_state.controls_requested_lat) {
-      mads_exit_controls(MADS_DISENGAGE_REASON_BUTTON);
-    }
   }
 }
 
