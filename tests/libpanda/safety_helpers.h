@@ -254,8 +254,8 @@ void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool mai
   if (enable_mads) {
     alternative_experience |= ALT_EXP_ENABLE_MADS;
 
-    if (!disengage_lateral_on_brake)
-      alternative_experience |= ALT_EXP_DISABLE_DISENGAGE_LATERAL_ON_BRAKE;
+    if (disengage_lateral_on_brake)
+      alternative_experience |= ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE;
 
     if (main_cruise_allowed)
       alternative_experience |= ALT_EXP_MAIN_CRUISE_ALLOWED;
