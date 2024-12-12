@@ -36,7 +36,7 @@ ButtonState mads_button_press = MADS_BUTTON_UNAVAILABLE;
 MADSState m_mads_state;
 
 // state for mads controls_allowed_lat timeout logic
-bool heartbeat_engaged_mads = false;             // MADS enabled, passed in heartbeat USB command
+bool heartbeat_engaged_mads = false;              // MADS enabled, passed in heartbeat USB command
 uint32_t heartbeat_engaged_mads_mismatches = 0U;  // count of mismatches between heartbeat_engaged_mads and controls_allowed_lat
 
 // ===============================
