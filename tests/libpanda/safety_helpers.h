@@ -59,10 +59,6 @@ bool get_main_cruise_allowed(void){
   return get_mads_state()->main_cruise_allowed;
 }
 
-bool get_always_allow_mads_button(void){
-  return get_mads_state()->always_allow_mads_button;
-}
-
 int get_alternative_experience(void){
   return alternative_experience;
 }
@@ -244,7 +240,7 @@ void set_controls_requested_lat(bool c){
   m_mads_state.controls_requested_lat = c;
 }
 
-void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool main_cruise_allowed, bool always_allow_mads_button){
+void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool main_cruise_allowed){
   alternative_experience = 0;
   if (enable_mads) {
     alternative_experience |= ALT_EXP_ENABLE_MADS;
@@ -254,9 +250,6 @@ void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool mai
 
     if (main_cruise_allowed)
       alternative_experience |= ALT_EXP_MAIN_CRUISE_ALLOWED;
-
-    if (always_allow_mads_button)
-      alternative_experience |= ALT_EXP_ALWAYS_ALLOW_MADS_BUTTON;
   }
 
   mads_set_alternative_experience(&alternative_experience);

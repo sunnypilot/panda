@@ -61,7 +61,6 @@ static void m_mads_state_init(void) {
   m_mads_state.system_enabled = false;
   m_mads_state.disengage_lateral_on_brake = false;
   m_mads_state.main_cruise_allowed = false;
-  m_mads_state.always_allow_mads_button = false;
 
   m_mads_state.acc_main.previous = false;
   m_mads_state.acc_main.transition = MADS_EDGE_NO_CHANGE;
@@ -173,17 +172,15 @@ inline void mads_set_alternative_experience(const int *mode) {
   bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
   bool disengage_lateral_on_brake = (*mode & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
   bool main_cruise_allowed = (*mode & ALT_EXP_MAIN_CRUISE_ALLOWED) != 0;
-  bool always_allow_mads_button = (*mode & ALT_EXP_ALWAYS_ALLOW_MADS_BUTTON) != 0;
 
-  mads_set_system_state(mads_enabled, disengage_lateral_on_brake, main_cruise_allowed, always_allow_mads_button);
+  mads_set_system_state(mads_enabled, disengage_lateral_on_brake, main_cruise_allowed);
 }
 
-inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed, bool always_allow_mads_button) {
+inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed) {
   m_mads_state_init();
   m_mads_state.system_enabled = enabled;
   m_mads_state.disengage_lateral_on_brake = enabled && disengage_lateral_on_brake;
   m_mads_state.main_cruise_allowed = enabled && main_cruise_allowed;
-  m_mads_state.always_allow_mads_button = enabled && always_allow_mads_button;
 }
 
 inline void mads_exit_controls(DisengageReason reason) {
