@@ -34,6 +34,12 @@ def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
   _unified_engagement_mode = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.UNIFIED_ENGAGEMENT_MODE)
   _always_allow_mads_button = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.ALWAYS_ALLOW_MADS_BUTTON)
   safety.set_mads_params(_enable_mads, _disengage_lateral_on_brake, _main_cruise_allowed, _unified_engagement_mode, _always_allow_mads_button)
+  print("alternative experience:")
+  print(f"  enable mads: {_enable_mads}")
+  print(f"  disengage lateral on brake: {_disengage_lateral_on_brake}")
+  print(f"  main cruise allowed: {_main_cruise_allowed}")
+  print(f"  unified engagement mode: {_unified_engagement_mode}")
+  print(f"  always allow mads button: {_always_allow_mads_button}")
 
   if segment:
     init_segment(safety, lr, safety_mode, param)
