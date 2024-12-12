@@ -80,20 +80,6 @@ static void m_mads_state_init(void) {
   m_mads_state.controls_allowed_lat = false;
 }
 
-static void m_mads_check_braking(void) {
-  if (m_mads_state.disengage_lateral_on_brake) {
-    if ((m_mads_state.braking.transition == MADS_EDGE_RISING) || (m_mads_state.braking.current && m_mads_state.is_vehicle_moving)) {
-      m_mads_state.controls_requested_lat = false;
-      mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
-    } else if ((m_mads_state.current_disengage.reason == MADS_DISENGAGE_REASON_BRAKE) && !m_mads_state.braking.current) {
-      m_mads_state.controls_requested_lat = true;
-    }
-    else {
-      
-    }
-  }
-}
-
 static void m_update_button_state(ButtonStateTracking *button_state) {
   if (button_state->current != MADS_BUTTON_UNAVAILABLE) {
     button_state->transition = m_get_edge_transition(
@@ -132,6 +118,19 @@ static void m_mads_update_state(void) {
   // MADS button
   if (m_mads_state.mads_button.transition == MADS_EDGE_RISING) {
     m_mads_state.controls_requested_lat = true;
+  }
+
+  // Disengage lateral on brake
+  if (m_mads_state.disengage_lateral_on_brake) {
+    if ((m_mads_state.braking.transition == MADS_EDGE_RISING) || (m_mads_state.braking.current && m_mads_state.is_vehicle_moving)) {
+      m_mads_state.controls_requested_lat = false;
+      mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
+    } else if ((m_mads_state.current_disengage.reason == MADS_DISENGAGE_REASON_BRAKE) && !m_mads_state.braking.current) {
+      m_mads_state.controls_requested_lat = true;
+    }
+    else {
+  
+    }
   }
 }
 
@@ -190,8 +189,7 @@ inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_ma
   m_update_button_state(&m_mads_state.mads_button);
 
   m_mads_update_state();
-  
-  m_mads_check_braking();
+
   m_mads_try_allow_controls_lat();
   m_mads_heartbeat_engaged_check();
 }
