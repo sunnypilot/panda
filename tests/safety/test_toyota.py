@@ -136,28 +136,14 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
       with self.subTest("enable_mads", mads_enabled=enable_mads):
         for mads_button_press in range(4):
           with self.subTest("mads_button_press", button_state=mads_button_press):
-            for acc_main_on in (True, False):
-              with self.subTest("acc_main_on", acc_main_on=acc_main_on):
-                self._mads_states_cleanup()
-                self.safety.set_mads_params(enable_mads, False)
-                self.safety.set_acc_main_on(acc_main_on)
+            self._mads_states_cleanup()
+            self.safety.set_mads_params(enable_mads, False)
 
-                self._rx(self._lkas_button_msg(False, mads_button_press))
-                self._rx(self._speed_msg(0))  # Only for Toyota, we must send a msg to bus 0 because generic_rx_checks happen only there.
-                self.assertEqual(enable_mads and acc_main_on and mads_button_press in range(1, 4),
-                                 self.safety.get_controls_allowed_lat())
+            self._rx(self._lkas_button_msg(False, mads_button_press))
+            self._rx(self._speed_msg(0))  # Only for Toyota, we must send a msg to bus 0 because generic_rx_checks happen only there.
+            self.assertEqual(enable_mads and mads_button_press in range(1, 4),
+                             self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
-
-  def test_enable_and_disable_control_allowed_with_mads_button(self):
-    raise unittest.SkipTest("For Toyota, we only use the MADS button detection to allow lateral control, not to disable it")
-
-  def test_enable_control_allowed_with_mads_button_and_disable_with_main_cruise(self):
-    # For Toyota, it is not a button, but the LKAS icon. The behavior is flaky, skip this test until we find a more reliable signal
-    raise unittest.SkipTest
-
-  def test_mads_button_press_with_acc_main_on(self):
-    # For Toyota, it is not a button, but the LKAS icon. The behavior is flaky, skip this test until we find a more reliable signal
-    raise unittest.SkipTest
 
 class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
 
