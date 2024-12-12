@@ -64,7 +64,6 @@ static void m_mads_state_init(void) {
 
   m_mads_state.system_enabled = false;
   m_mads_state.disengage_lateral_on_brake = false;
-  m_mads_state.main_cruise_allowed = false;
 
   m_mads_state.acc_main.previous = false;
   m_mads_state.acc_main.transition = MADS_EDGE_NO_CHANGE;
@@ -107,7 +106,7 @@ static void m_mads_try_allow_controls_lat(void) {
 // Use buttons or main cruise state transition properties to request lateral control
 static void m_mads_update_state(void) {
   // Main cruise
-  if ((m_mads_state.acc_main.transition == MADS_EDGE_RISING) && m_mads_state.main_cruise_allowed) {
+  if (m_mads_state.acc_main.transition == MADS_EDGE_RISING) {
     m_mads_state.controls_requested_lat = true;
   } else if (m_mads_state.acc_main.transition == MADS_EDGE_FALLING) {
     m_mads_state.controls_requested_lat = false;
@@ -152,16 +151,14 @@ static void m_mads_heartbeat_engaged_check(void) {
 inline void mads_set_alternative_experience(const int *mode) {
   bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
   bool disengage_lateral_on_brake = (*mode & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
-  bool main_cruise_allowed = (*mode & ALT_EXP_MAIN_CRUISE_ALLOWED) != 0;
 
-  mads_set_system_state(mads_enabled, disengage_lateral_on_brake, main_cruise_allowed);
+  mads_set_system_state(mads_enabled, disengage_lateral_on_brake);
 }
 
-inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed) {
+inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
   m_mads_state_init();
   m_mads_state.system_enabled = enabled;
   m_mads_state.disengage_lateral_on_brake = enabled && disengage_lateral_on_brake;
-  m_mads_state.main_cruise_allowed = enabled && main_cruise_allowed;
 }
 
 inline void mads_exit_controls(DisengageReason reason) {

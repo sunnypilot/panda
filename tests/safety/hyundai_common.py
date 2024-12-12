@@ -149,32 +149,30 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
-        for main_cruise_allowed in (True, False):
-          with self.subTest("main_cruise_allowed", main_cruise_allowed=main_cruise_allowed):
-            for main_cruise_toggleable in (True, False):
-              with self.subTest("main_cruise_toggleable", main_cruise_toggleable=main_cruise_toggleable):
-                main_cruise_toggleable_flag = Panda.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE if main_cruise_toggleable else 0
-                self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
+        for main_cruise_toggleable in (True, False):
+          with self.subTest("main_cruise_toggleable", main_cruise_toggleable=main_cruise_toggleable):
+            main_cruise_toggleable_flag = Panda.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE if main_cruise_toggleable else 0
+            self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
-                # Test initial state
-                self._mads_states_cleanup()
-                self.safety.set_mads_params(enable_mads, False, main_cruise_allowed)
+            # Test initial state
+            self._mads_states_cleanup()
+            self.safety.set_mads_params(enable_mads, False)
 
-                self.assertFalse(self.safety.get_acc_main_on())
+            self.assertFalse(self.safety.get_acc_main_on())
 
-                self._rx(self._main_cruise_button_msg(0))
-                self._rx(self._main_cruise_button_msg(1))
-                self.assertEqual(enable_mads and main_cruise_allowed and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
+            self._rx(self._main_cruise_button_msg(0))
+            self._rx(self._main_cruise_button_msg(1))
+            self.assertEqual(enable_mads and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
 
-                self._rx(self._main_cruise_button_msg(0))
-                self.assertEqual(enable_mads and main_cruise_allowed and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
+            self._rx(self._main_cruise_button_msg(0))
+            self.assertEqual(enable_mads and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
 
-                self._rx(self._main_cruise_button_msg(1))
-                self.assertFalse(self.safety.get_controls_allowed_lat())
+            self._rx(self._main_cruise_button_msg(1))
+            self.assertFalse(self.safety.get_controls_allowed_lat())
 
-                for _ in range(10):
-                  self._rx(self._main_cruise_button_msg(1))
-                  self.assertFalse(self.safety.get_controls_allowed_lat())
+            for _ in range(10):
+              self._rx(self._main_cruise_button_msg(1))
+              self.assertFalse(self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
     self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
@@ -189,7 +187,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
         self._mads_states_cleanup()
-        self.safety.set_mads_params(enable_mads, False, True)
+        self.safety.set_mads_params(enable_mads, False)
 
         # Initial state
         self._rx(self._main_cruise_button_msg(0))
@@ -222,7 +220,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
         self._mads_states_cleanup()
-        self.safety.set_mads_params(enable_mads, False, True)
+        self.safety.set_mads_params(enable_mads, False)
         self.safety.set_controls_allowed_lat(True)
 
         # Start with matched states
@@ -263,7 +261,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
         self._mads_states_cleanup()
-        self.safety.set_mads_params(enable_mads, False, True)
+        self.safety.set_mads_params(enable_mads, False)
 
         # Create initial mismatch
         self._rx(self._main_cruise_button_msg(1))  # Press button

@@ -111,7 +111,6 @@ class ALTERNATIVE_EXPERIENCE:
   # sunnypilot
   ENABLE_MADS = 2 ** 10
   DISENGAGE_LATERAL_ON_BRAKE = 2 ** 11
-  MAIN_CRUISE_ALLOWED = 2 ** 12
 
 class Panda:
 

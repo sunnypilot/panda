@@ -139,7 +139,7 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
             for acc_main_on in (True, False):
               with self.subTest("acc_main_on", acc_main_on=acc_main_on):
                 self._mads_states_cleanup()
-                self.safety.set_mads_params(enable_mads, False, False)
+                self.safety.set_mads_params(enable_mads, False)
                 self.safety.set_acc_main_on(acc_main_on)
 
                 self._rx(self._lkas_button_msg(False, mads_button_press))
