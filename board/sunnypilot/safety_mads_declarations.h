@@ -107,11 +107,9 @@ typedef struct {
 
 extern ButtonState mads_button_press;
 extern MADSState m_mads_state;
-extern bool heartbeat_engaged_mads;
 
 // state for mads controls_allowed_lat timeout logic
-bool heartbeat_engaged_mads = false;            // MADS enabled, passed in heartbeat USB command
-uint32_t heartbeat_engaged_mads_mismatches = 0;  // count of mismatches between heartbeat_engaged_lat and controls_allowed_lat
+extern bool heartbeat_engaged_mads;
 
 // ===============================
 // External Function Declarations (kept as needed)
