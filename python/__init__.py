@@ -916,8 +916,8 @@ class Panda:
     """
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf2, port_number, 0, b'')
 
-  def send_heartbeat(self, engaged=True):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, 0, b'')
+  def send_heartbeat(self, engaged=True, engaged_mads=True):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, engaged_mads, b'')
 
   # disable heartbeat checks for use outside of openpilot
   # sending a heartbeat will reenable the checks
