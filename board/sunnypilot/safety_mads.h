@@ -128,7 +128,7 @@ static void m_mads_update_state(void) {
       m_mads_state.controls_requested_lat = true;
     }
     else {
-  
+
     }
   }
 }
