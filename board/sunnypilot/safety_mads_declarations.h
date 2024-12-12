@@ -72,23 +72,24 @@ typedef struct {
 } DisengageState;
 
 typedef struct {
-  const ButtonState *current;
+  ButtonState current;
   ButtonState last;
   EdgeTransition transition;
 } ButtonStateTracking;
 
 typedef struct {
   EdgeTransition transition;
-  const bool *current;
+  bool current : 1;
   bool previous : 1;
 } BinaryStateTracking;
 
 typedef struct {
-  const bool *is_vehicle_moving_ptr;
+  bool is_vehicle_moving : 1;
 
   ButtonStateTracking mads_button;
   BinaryStateTracking acc_main;
   BinaryStateTracking op_controls_allowed;
+  BinaryStateTracking braking;
 
   DisengageState current_disengage;
   DisengageState previous_disengage;
@@ -118,6 +119,6 @@ extern bool heartbeat_engaged_mads;
 extern const MADSState* get_mads_state(void);
 extern void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool main_cruise_allowed);
 extern void mads_set_alternative_experience(const int *mode);
-extern void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, const bool *op_allowed, bool is_braking);
+extern void mads_state_update(bool op_vehicle_moving, bool op_acc_main, bool op_allowed, bool is_braking);
 extern void mads_exit_controls(DisengageReason reason);
 extern bool mads_is_lateral_control_allowed_by_mads(void);

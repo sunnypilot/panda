@@ -19,6 +19,10 @@ bool safety_config_valid() {
   return true;
 }
 
+const MADSState *get_mads_state(void) {
+  return &m_mads_state;
+}
+
 void set_controls_allowed(bool c){
   controls_allowed = c;
 }
@@ -222,7 +226,7 @@ void set_controls_allowed_lat(bool c){
 }
 
 bool get_mads_acc_main(void){
-  return *m_mads_state.acc_main.current;
+  return m_mads_state.acc_main.current;
 }
 
 bool get_mads_acc_main_prev(void){
