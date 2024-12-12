@@ -228,6 +228,11 @@ bool get_mads_acc_main_prev(void){
 int mads_get_current_disengage_reason(void) {
   return get_mads_state()->current_disengage.reason;
 }
+
+void mads_set_current_disengage_reason(int reason) {
+  m_mads_state.current_disengage.reason = reason;
+}
+
 int mads_get_previous_disengage_reason(void) {
   return get_mads_state()->previous_disengage.reason;
 }
@@ -246,6 +251,10 @@ void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake){
   }
 
   mads_set_alternative_experience(&alternative_experience);
+}
+
+void set_heartbeat_engaged_mads(bool c){
+  heartbeat_engaged_mads = c;
 }
 
 //int get_temp_debug(void){

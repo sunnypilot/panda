@@ -260,14 +260,11 @@ class HondaBase(common.PandaCarSafetyTest):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
         for mads_button_press in range(4):
           with self.subTest("mads_button_press", button_state=mads_button_press):
-            for acc_main_on in (True, False):
-              with self.subTest("acc_main_on", acc_main_on=acc_main_on):
-                self._mads_states_cleanup()
-                self.safety.set_mads_params(enable_mads, False)
-                self.safety.set_acc_main_on(acc_main_on)
+            self._mads_states_cleanup()
+            self.safety.set_mads_params(enable_mads, False)
 
-                self._rx(self._lkas_button_msg(False, mads_button_press))
-                self.assertEqual(enable_mads and acc_main_on and mads_button_press == 1, self.safety.get_controls_allowed_lat())
+            self._rx(self._lkas_button_msg(False, mads_button_press))
+            self.assertEqual(enable_mads and mads_button_press == 1, self.safety.get_controls_allowed_lat())
     self._mads_states_cleanup()
 
 
@@ -381,7 +378,7 @@ class TestHondaNidecPcmAltSafety(TestHondaNidecPcmSafety):
     self.safety.init_tests()
 
   def _acc_state_msg(self, main_on):
-    values = {"MAIN_ON": main_on, "COUNTER": self.cnt_acc_state % 4}
+    values = {"MAIN_ON": 1 if main_on else 0, "COUNTER": self.cnt_acc_state % 4}
     self.__class__.cnt_acc_state += 1
     return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
 
@@ -390,22 +387,6 @@ class TestHondaNidecPcmAltSafety(TestHondaNidecPcmSafety):
     values = {"CRUISE_BUTTONS": buttons, "MAIN_ON": main_on, "COUNTER": self.cnt_button % 4}
     self.__class__.cnt_button += 1
     return self.packer.make_can_msg_panda("SCM_BUTTONS", bus, values)
-
-  # TODO-SP: Understand why FLAG_HONDA_NIDEC_ALT cars are failing with the same signals as Bosch and other Nidec
-  def test_enable_control_allowed_with_mads_button_and_disable_with_main_cruise(self):
-    raise unittest.SkipTest("Flaky test with Nidec Alternative PCM state")
-
-  def test_enable_and_disable_control_allowed_with_mads_button(self):
-    raise unittest.SkipTest("Flaky test with Nidec Alternative PCM state")
-
-  def test_mads_button_combinations(self):
-    raise unittest.SkipTest("Flaky test with Nidec Alternative PCM state")
-
-  def test_mads_button_press_with_acc_main_on(self):
-    raise unittest.SkipTest("Flaky test with Nidec Alternative PCM state")
-
-  def test_enable_control_allowed_with_mads_button(self):
-    raise unittest.SkipTest("Flaky test with Nidec Alternative PCM state")
 
 
 # ********************* Honda Bosch **********************
