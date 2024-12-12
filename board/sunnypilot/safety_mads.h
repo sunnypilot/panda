@@ -214,5 +214,4 @@ inline void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_
   // TODO-SP: Refactor to utilize m_update_binary_state
   m_mads_check_braking(is_braking);
   m_mads_try_allow_controls_lat();
-  m_mads_heartbeat_engaged_check();
 }
