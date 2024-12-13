@@ -215,11 +215,6 @@ class MadsCommonBase(unittest.TestCase):
 
   def test_disengage_lateral_on_brake_with_pressed_and_released(self):
     try:
-      self._lkas_button_msg(False)
-    except NotImplementedError:
-      raise unittest.SkipTest("Skipping test because MADS button is not supported")
-
-    try:
       for enable_mads in (True, False):
         with self.subTest("enable_mads", enable_mads=enable_mads):
           for disengage_lateral_on_brake in (True, False):
@@ -227,16 +222,44 @@ class MadsCommonBase(unittest.TestCase):
               self._mads_states_cleanup()
               self.safety.set_mads_params(enable_mads, disengage_lateral_on_brake)
 
-              self._rx(self._lkas_button_msg(True))
+              # Set controls_allowed_lat rising edge
+              self.safety.set_controls_requested_lat(True)
               self._rx(self._speed_msg(0))
               self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
 
+              # User brake press, validate controls_allowed_lat is false
               self._rx(self._user_brake_msg(True))
               self._rx(self._speed_msg(0))
               self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+
+              # User brake release, validate controls_allowed_lat is true
               self._rx(self._user_brake_msg(False))
               self._rx(self._speed_msg(0))
               self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+
+  def test_disengage_lateral_on_brake_persistent_control_allowed_off(self):
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, True)
+
+      self.safety.set_controls_requested_lat(True)
+
+      # Vehicle moving, validate controls_allowed_lat is true
+      for _ in range(10):
+        self._rx(self._speed_msg(10))
+        self.assertTrue(self.safety.get_controls_allowed_lat())
+
+      # User braked, vehicle slowed down in 10 frames, then stopped for 10 frames
+      # Validate controls_allowed_lat is false
+      self._rx(self._user_brake_msg(True))
+      for _ in range(10):
+        self._rx(self._speed_msg(5))
+        self.assertFalse(self.safety.get_controls_allowed_lat())
+      for _ in range(10):
+        self._rx(self._speed_msg(0))
+        self.assertFalse(self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
 
