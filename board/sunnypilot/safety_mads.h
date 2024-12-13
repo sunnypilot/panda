@@ -127,7 +127,9 @@ static void m_update_binary_state(BinaryStateTracking *state) {
 }
 
 static void m_mads_try_allow_controls_lat(void) {
-  if (m_mads_state.controls_requested_lat && !m_mads_state.controls_allowed_lat && m_can_allow_controls_lat()) {
+  //TODO-SP: this is not final and shall not be merged. is demonstration purposes only
+  const bool braking_prevents_controls = m_mads_state.is_braking && m_mads_state.disengage_lateral_on_brake;
+  if (!braking_prevents_controls && m_mads_state.controls_requested_lat && !m_mads_state.controls_allowed_lat && m_can_allow_controls_lat()) {
     m_mads_state.controls_allowed_lat = true;
     m_mads_state.previous_disengage = m_mads_state.current_disengage;
     m_mads_state.current_disengage.reason = MADS_DISENGAGE_REASON_NONE;
@@ -184,8 +186,8 @@ inline void mads_set_system_state(const bool enabled, const bool disengage_later
 }
 
 inline void mads_exit_controls(const DisengageReason reason) {
-  m_mads_state.current_disengage.reason = reason;
   if (m_mads_state.controls_allowed_lat) {
+    m_mads_state.current_disengage.reason = reason;
     m_mads_state.previous_disengage = m_mads_state.current_disengage;
     m_mads_state.controls_allowed_lat = false;
   }
