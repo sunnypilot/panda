@@ -215,6 +215,11 @@ class MadsCommonBase(unittest.TestCase):
 
   def test_disengage_lateral_on_brake_with_pressed_and_released(self):
     try:
+      self._lkas_button_msg(False)
+    except NotImplementedError:
+      raise unittest.SkipTest("Skipping test because MADS button is not supported")
+
+    try:
       for enable_mads in (True, False):
         with self.subTest("enable_mads", enable_mads=enable_mads):
           for disengage_lateral_on_brake in (True, False):
