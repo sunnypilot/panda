@@ -256,16 +256,47 @@ class HondaBase(common.PandaCarSafetyTest):
     return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
 
   def test_enable_control_allowed_with_mads_button(self):
-    for enable_mads in (True, False):
-      with self.subTest("enable_mads", mads_enabled=enable_mads):
-        for mads_button_press in range(4):
-          with self.subTest("mads_button_press", button_state=mads_button_press):
-            self._mads_states_cleanup()
-            self.safety.set_mads_params(enable_mads, False)
+    """Tests all MADS button state transitions and combinations with enable_mads flag.
+    Verifies both press and release behavior and invalid states."""
+    try:
+      # Test all combinations of enable_mads and transitions
+      for enable_mads in (True, False):
+        with self.subTest("enable_mads", mads_enabled=enable_mads):
+          self._mads_states_cleanup()
+          self.safety.set_mads_params(enable_mads, False)
 
-            self._rx(self._lkas_button_msg(False, mads_button_press))
-            self.assertEqual(enable_mads and mads_button_press == 1, self.safety.get_controls_allowed_lat())
-    self._mads_states_cleanup()
+          # Test invalid cruise setting values
+          for invalid_setting in (2, 3):
+            self._rx(self._lkas_button_msg(False, invalid_setting))
+            self.assertFalse(self.safety.get_controls_allowed_lat())
+
+          # Test press sequence: not pressed -> pressed -> not pressed
+          # Initial state
+          self._rx(self._lkas_button_msg(False, 0))
+          self.assertFalse(self.safety.get_controls_allowed_lat())
+
+          # Press
+          self._rx(self._lkas_button_msg(False, 1))
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+
+          # Release
+          self._rx(self._lkas_button_msg(False, 0))
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+
+          # Test direct transition from invalid state to valid states
+          for invalid_setting in (2, 3):
+            # Invalid -> Pressed
+            self._rx(self._lkas_button_msg(False, invalid_setting))
+            self._rx(self._lkas_button_msg(False, 1))
+            self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+
+            # Invalid -> Not Pressed
+            self._rx(self._lkas_button_msg(False, invalid_setting))
+            self._rx(self._lkas_button_msg(False, 0))
+            self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+
+    finally:
+      self._mads_states_cleanup()
 
 
 # ********************* Honda Nidec **********************
