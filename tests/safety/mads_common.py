@@ -107,7 +107,7 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
-  def test_controls_requested_lat_from_acc_main_on(self):
+  def test_mads_with_acc_main_on(self):
     try:
       for enable_mads in (True, False):
         with self.subTest("enable_mads", mads_enabled=enable_mads):
