@@ -19,6 +19,11 @@ bool safety_config_valid() {
   return true;
 }
 
+
+static MADSState *get_mads_state(void) {
+  return &m_mads_state;
+}
+
 void set_controls_allowed(bool c){
   controls_allowed = c;
 }
@@ -226,15 +231,15 @@ bool get_mads_acc_main_prev(void){
 }
 
 int mads_get_current_disengage_reason(void) {
-  return get_mads_state()->current_disengage.reason;
+  return get_mads_state()->current_disengage.active_reason;
+}
+
+int get_mads_pending_disengage_reason(void) {
+  return get_mads_state()->current_disengage.pending_reasons;
 }
 
 void mads_set_current_disengage_reason(int reason) {
-  m_mads_state.current_disengage.reason = reason;
-}
-
-int mads_get_previous_disengage_reason(void) {
-  return get_mads_state()->previous_disengage.reason;
+  m_mads_state.current_disengage.active_reason = reason;
 }
 
 void set_controls_requested_lat(bool c){

@@ -14,7 +14,6 @@ DEBUG_VARS = {
   'controls_requested_lat': lambda safety: safety.get_controls_requested_lat(),
   'controls_allowed_lat': lambda safety: safety.get_controls_allowed_lat(),
   'current_disengage_reason': lambda safety: safety.mads_get_current_disengage_reason(),
-  'previous_disengage_reason': lambda safety: safety.mads_get_previous_disengage_reason(),
   'stock_acc_main': lambda safety: safety.get_acc_main_on(),
   'mads_acc_main': lambda safety: safety.get_mads_acc_main(),
 }

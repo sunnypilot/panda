@@ -318,3 +318,74 @@ class MadsCommonBase(unittest.TestCase):
           self.assertFalse(self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
+
+  def test_brake_disengage_with_control_request(self):
+    """Tests behavior when controls are requested while brake is engaged
+
+    Sequence:
+    1. Enable MADS with disengage on brake
+    2. Brake to disengage lateral control
+    3. Set control request while braking
+    4. Release brake
+    5. Verify controls become allowed
+    """
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, True)  # enable MADS with disengage on brake
+
+      # Initial state
+      self.safety.set_controls_allowed_lat(True)
+      self._rx(self._speed_msg(0))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+
+      # Brake press disengages lateral
+      self._rx(self._user_brake_msg(True))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+
+      # Request controls while braking
+      self.safety.set_controls_requested_lat(True)
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+
+      # Release brake - should enable since controls were requested
+      self._rx(self._user_brake_msg(False))
+      self._rx(self._speed_msg(0))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+
+    finally:
+      self._mads_states_cleanup()
+
+  def test_brake_disengage_with_acc_main_off(self):
+    """Tests behavior when ACC main is turned off while brake is engaged
+
+    Sequence:
+    1. Enable MADS with disengage on brake
+    2. Brake to disengage lateral control
+    3. Turn ACC main off while braking
+    4. Release brake
+    5. Verify controls remain disengaged
+    """
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, True)  # enable MADS with disengage on brake
+
+      # Initial state - enable with ACC main
+      self.safety.set_acc_main_on(True)
+      self._rx(self._speed_msg(0))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+
+      # Brake press disengages lateral
+      self._rx(self._user_brake_msg(True))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+
+      # Turn ACC main off while braking
+      self.safety.set_acc_main_on(False)
+      self._rx(self._speed_msg(0))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+
+      # Release brake - should remain disabled since ACC main is off
+      self._rx(self._user_brake_msg(False))
+      self._rx(self._speed_msg(0))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+
+    finally:
+      self._mads_states_cleanup()
