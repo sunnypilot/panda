@@ -103,8 +103,7 @@ static bool m_can_allow_controls_lat(void) {
 }
 
 static void m_mads_check_braking(const bool is_braking) {
-  const bool was_braking = m_mads_state.is_braking;
-  if (is_braking && (!was_braking || m_mads_state.is_vehicle_moving) && m_mads_state.disengage_lateral_on_brake) {
+  if (is_braking && m_mads_state.disengage_lateral_on_brake) {
     mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
   }
 
