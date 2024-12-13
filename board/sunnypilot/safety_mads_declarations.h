@@ -108,6 +108,7 @@ extern MADSState m_mads_state;
 
 // state for mads controls_allowed_lat timeout logic
 extern bool heartbeat_engaged_mads;
+extern uint32_t heartbeat_engaged_mads_mismatches;
 
 // ===============================
 // External Function Declarations (kept as needed)
