@@ -233,7 +233,7 @@ static void tick_handler(void) {
         heartbeat_engaged_mismatches = 0U;
       }
 
-      m_mads_heartbeat_engaged_check();
+      mads_heartbeat_engaged_check();
 
       if (!heartbeat_disabled) {
         // if the heartbeat has been gone for a while, go to SILENT safety mode and enter power save

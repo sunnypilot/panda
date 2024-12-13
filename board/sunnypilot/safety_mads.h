@@ -152,7 +152,7 @@ static void m_mads_update_state(void) {
   }
 }
 
-inline void m_mads_heartbeat_engaged_check(void) {
+inline void mads_heartbeat_engaged_check(void) {
   if (m_mads_state.controls_allowed_lat && !heartbeat_engaged_mads) {
     heartbeat_engaged_mads_mismatches += 1U;
     if (heartbeat_engaged_mads_mismatches >= 3U) {
