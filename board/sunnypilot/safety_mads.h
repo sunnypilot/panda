@@ -199,7 +199,7 @@ inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_ma
   m_update_binary_state(&m_mads_state.braking);
   m_update_button_state(&m_mads_state.mads_button);
 
-  bool allowed = m_update_control_state();
+  const bool allowed = m_update_control_state();
 
   m_publish_state(allowed);
 }
