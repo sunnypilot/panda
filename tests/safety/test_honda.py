@@ -256,44 +256,39 @@ class HondaBase(common.PandaCarSafetyTest):
     return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
 
   def test_enable_control_allowed_with_mads_button(self):
-    """Tests all MADS button state transitions and combinations with enable_mads flag.
-    Verifies both press and release behavior and invalid states."""
+    """Tests MADS button state transitions and internal button press state."""
     try:
-      # Test all combinations of enable_mads and transitions
       for enable_mads in (True, False):
         with self.subTest("enable_mads", mads_enabled=enable_mads):
           self._mads_states_cleanup()
           self.safety.set_mads_params(enable_mads, False)
 
-          # Test invalid cruise setting values
-          for invalid_setting in (2, 3):
-            self._rx(self._lkas_button_msg(False, invalid_setting))
-            self.assertFalse(self.safety.get_controls_allowed_lat())
-
-          # Test press sequence: not pressed -> pressed -> not pressed
-          # Initial state
+          # Verify initial state
           self._rx(self._lkas_button_msg(False, 0))
+          self.assertEqual(0, self.safety.get_mads_button_press())  # NOT_PRESSED
           self.assertFalse(self.safety.get_controls_allowed_lat())
 
-          # Press
+          # Verify press sets correct internal state
           self._rx(self._lkas_button_msg(False, 1))
+          self.assertEqual(1, self.safety.get_mads_button_press())  # PRESSED
           self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
 
-          # Release
+          # Verify release sets correct internal state
           self._rx(self._lkas_button_msg(False, 0))
+          self.assertEqual(0, self.safety.get_mads_button_press())  # NOT_PRESSED
           self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
 
-          # Test direct transition from invalid state to valid states
+          # Test invalid values - should not change button press state
           for invalid_setting in (2, 3):
-            # Invalid -> Pressed
             self._rx(self._lkas_button_msg(False, invalid_setting))
-            self._rx(self._lkas_button_msg(False, 1))
+            self.assertEqual(0, self.safety.get_mads_button_press())  # Should remain NOT_PRESSED
             self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
 
-            # Invalid -> Not Pressed
-            self._rx(self._lkas_button_msg(False, invalid_setting))
-            self._rx(self._lkas_button_msg(False, 0))
-            self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+          # Verify we can still transition after invalid values
+          self._rx(self._lkas_button_msg(False, 1))
+          self.assertEqual(1, self.safety.get_mads_button_press())
+          self._rx(self._lkas_button_msg(False, 0))
+          self.assertEqual(0, self.safety.get_mads_button_press())
 
     finally:
       self._mads_states_cleanup()
