@@ -181,7 +181,7 @@ inline void mads_set_alternative_experience(const int *mode) {
 inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
   m_mads_state_init();
   m_mads_state.system_enabled = enabled;
-  m_mads_state.disengage_lateral_on_brake = enabled && disengage_lateral_on_brake;
+  m_mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
 }
 
 inline void mads_exit_controls(DisengageReason reason) {
