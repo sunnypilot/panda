@@ -350,7 +350,7 @@ void generic_rx_checks(bool stock_ecu_detected) {
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
     relay_malfunction_set();
   }
-  mads_state_update(&vehicle_moving, &acc_main_on, &controls_allowed, brake_pressed || regen_braking);
+  mads_state_update(vehicle_moving, acc_main_on, controls_allowed, brake_pressed || regen_braking);
 }
 
 static void relay_malfunction_reset(void) {

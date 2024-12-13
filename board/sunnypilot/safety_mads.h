@@ -43,7 +43,7 @@ uint32_t heartbeat_engaged_mads_mismatches = 0U;  // count of mismatches between
 // State Update Helpers
 // ===============================
 
-static EdgeTransition m_get_edge_transition(bool current, bool last) {
+static EdgeTransition m_get_edge_transition(const bool current, const bool last) {
   EdgeTransition state;
 
   if (current && !last) {
@@ -58,9 +58,9 @@ static EdgeTransition m_get_edge_transition(bool current, bool last) {
 }
 
 static void m_mads_state_init(void) {
-  m_mads_state.is_vehicle_moving_ptr = NULL;
+  m_mads_state.is_vehicle_moving = NULL;
   m_mads_state.acc_main.current = NULL;
-  m_mads_state.mads_button.current = NULL;
+  m_mads_state.mads_button.current = MADS_BUTTON_UNAVAILABLE;
 
   m_mads_state.system_enabled = false;
   m_mads_state.disengage_lateral_on_brake = false;
@@ -102,9 +102,9 @@ static bool m_can_allow_controls_lat(void) {
   return allowed;
 }
 
-static void m_mads_check_braking(bool is_braking) {
-  bool was_braking = m_mads_state.is_braking;
-  if (is_braking && (!was_braking || *m_mads_state.is_vehicle_moving_ptr) && m_mads_state.disengage_lateral_on_brake) {
+static void m_mads_check_braking(const bool is_braking) {
+  const bool was_braking = m_mads_state.is_braking;
+  if (is_braking && (!was_braking || m_mads_state.is_vehicle_moving) && m_mads_state.disengage_lateral_on_brake) {
     mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
   }
 
@@ -112,19 +112,19 @@ static void m_mads_check_braking(bool is_braking) {
 }
 
 static void m_update_button_state(ButtonStateTracking *button_state) {
-  if (*button_state->current != MADS_BUTTON_UNAVAILABLE) {
+  if (button_state->current != MADS_BUTTON_UNAVAILABLE) {
     button_state->transition = m_get_edge_transition(
-      *button_state->current == MADS_BUTTON_PRESSED,
+      button_state->current == MADS_BUTTON_PRESSED,
       button_state->last == MADS_BUTTON_PRESSED
     );
 
-    button_state->last = *button_state->current;
+    button_state->last = button_state->current;
   }
 }
 
 static void m_update_binary_state(BinaryStateTracking *state) {
-  state->transition = m_get_edge_transition(*state->current, state->previous);
-  state->previous = *state->current;
+  state->transition = m_get_edge_transition(state->current, state->previous);
+  state->previous = state->current;
 }
 
 static void m_mads_try_allow_controls_lat(void) {
@@ -172,19 +172,19 @@ inline const MADSState *get_mads_state(void) {
 }
 
 inline void mads_set_alternative_experience(const int *mode) {
-  bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
-  bool disengage_lateral_on_brake = (*mode & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
+  const bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
+  const bool disengage_lateral_on_brake = (*mode & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
 
   mads_set_system_state(mads_enabled, disengage_lateral_on_brake);
 }
 
-inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake) {
+inline void mads_set_system_state(const bool enabled, const bool disengage_lateral_on_brake) {
   m_mads_state_init();
   m_mads_state.system_enabled = enabled;
   m_mads_state.disengage_lateral_on_brake = disengage_lateral_on_brake;
 }
 
-inline void mads_exit_controls(DisengageReason reason) {
+inline void mads_exit_controls(const DisengageReason reason) {
   m_mads_state.current_disengage.reason = reason;
   if (m_mads_state.controls_allowed_lat) {
     m_mads_state.previous_disengage = m_mads_state.current_disengage;
@@ -196,11 +196,11 @@ inline bool mads_is_lateral_control_allowed_by_mads(void) {
   return m_mads_state.system_enabled && m_mads_state.controls_allowed_lat;
 }
 
-inline void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, const bool *op_allowed, bool is_braking) {
-  m_mads_state.is_vehicle_moving_ptr = op_vehicle_moving;
+inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_main, const bool op_allowed, const bool is_braking) {
+  m_mads_state.is_vehicle_moving = op_vehicle_moving;
   m_mads_state.acc_main.current = op_acc_main;
   m_mads_state.op_controls_allowed.current = op_allowed;
-  m_mads_state.mads_button.current = &mads_button_press;
+  m_mads_state.mads_button.current = mads_button_press;
 
   m_update_binary_state(&m_mads_state.acc_main);
   m_update_binary_state(&m_mads_state.op_controls_allowed);

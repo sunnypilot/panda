@@ -67,23 +67,23 @@ typedef enum __attribute__((packed)) {
 
 typedef struct {
   DisengageReason reason;
-  bool can_auto_resume;
+  bool can_auto_resume : 1;
 } DisengageState;
 
 typedef struct {
-  const ButtonState *current;
+  ButtonState current;
   ButtonState last;
   EdgeTransition transition;
 } ButtonStateTracking;
 
 typedef struct {
   EdgeTransition transition;
-  const bool *current;
+  bool current : 1;
   bool previous : 1;
 } BinaryStateTracking;
 
 typedef struct {
-  const bool *is_vehicle_moving_ptr;
+  bool is_vehicle_moving : 1;
 
   ButtonStateTracking mads_button;
   BinaryStateTracking acc_main;
@@ -117,7 +117,7 @@ extern uint32_t heartbeat_engaged_mads_mismatches;
 extern const MADSState* get_mads_state(void);
 extern void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake);
 extern void mads_set_alternative_experience(const int *mode);
-extern void mads_state_update(const bool *op_vehicle_moving, const bool *op_acc_main, const bool *op_allowed, bool is_braking);
+extern void mads_state_update(bool op_vehicle_moving, bool op_acc_main, bool op_allowed, bool is_braking);
 extern void mads_exit_controls(DisengageReason reason);
 extern bool mads_is_lateral_control_allowed_by_mads(void);
 extern void mads_heartbeat_engaged_check(void);

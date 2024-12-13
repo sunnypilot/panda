@@ -218,7 +218,7 @@ void set_controls_allowed_lat(bool c){
 }
 
 bool get_mads_acc_main(void){
-  return *m_mads_state.acc_main.current;
+  return m_mads_state.acc_main.current;
 }
 
 bool get_mads_acc_main_prev(void){
