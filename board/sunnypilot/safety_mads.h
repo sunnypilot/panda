@@ -100,7 +100,7 @@ static void m_update_binary_state(BinaryStateTracking *state) {
  * 
  * @return void
  */
-static void m_update_control_state(void) {
+static bool m_update_control_state(void) {
   bool process_controls = true;
 
   // Initial control requests from button or ACC transitions
@@ -131,8 +131,12 @@ static void m_update_control_state(void) {
     }
   }
 
+  return process_controls;
+}
+
+static void m_publish_state(bool allowed) {
   // Process control request if conditions allow
-  if (process_controls && m_mads_state.controls_requested_lat && !m_mads_state.controls_allowed_lat) {
+  if (allowed && m_mads_state.controls_requested_lat && !m_mads_state.controls_allowed_lat) {
     m_mads_state.controls_requested_lat = false;
     m_mads_state.controls_allowed_lat = true;
     m_mads_state.current_disengage.active_reason = MADS_DISENGAGE_REASON_NONE;
@@ -195,5 +199,7 @@ inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_ma
   m_update_binary_state(&m_mads_state.braking);
   m_update_button_state(&m_mads_state.mads_button);
 
-  m_update_control_state();
+  bool allowed = m_update_control_state();
+
+  m_publish_state(allowed);
 }
