@@ -185,9 +185,9 @@ inline void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake)
 }
 
 inline void mads_exit_controls(DisengageReason reason) {
+  m_mads_state.current_disengage.reason = reason;
   if (m_mads_state.controls_allowed_lat) {
     m_mads_state.previous_disengage = m_mads_state.current_disengage;
-    m_mads_state.current_disengage.reason = reason;
     m_mads_state.controls_allowed_lat = false;
   }
 }
