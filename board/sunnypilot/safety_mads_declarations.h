@@ -43,13 +43,13 @@ typedef enum __attribute__((packed)) {
 } EdgeTransition;
 
 typedef enum __attribute__((packed)) {
-  MADS_DISENGAGE_REASON_NONE = 0,                              ///< No disengagement
-  MADS_DISENGAGE_REASON_BRAKE = 1,                             ///< Brake pedal pressed
-  MADS_DISENGAGE_REASON_LAG = 2,                               ///< System lag detected
-  MADS_DISENGAGE_REASON_BUTTON = 4,                            ///< User button press
-  MADS_DISENGAGE_REASON_ACC_MAIN_OFF = 8,                      ///< ACC system turned off
-  MADS_DISENGAGE_REASON_NON_PCM_ACC_MAIN_DESYNC = 16,         ///< ACC sync error
-  MADS_DISENGAGE_REASON_HEARTBEAT_ENGAGED_MISMATCH = 32,       ///< Heartbeat mismatch
+  MADS_DISENGAGE_REASON_NONE = 0,                         ///< No disengagement
+  MADS_DISENGAGE_REASON_BRAKE = 1,                        ///< Brake pedal pressed
+  MADS_DISENGAGE_REASON_LAG = 2,                          ///< System lag detected
+  MADS_DISENGAGE_REASON_BUTTON = 4,                       ///< User button press
+  MADS_DISENGAGE_REASON_ACC_MAIN_OFF = 8,                 ///< ACC system turned off
+  MADS_DISENGAGE_REASON_NON_PCM_ACC_MAIN_DESYNC = 16,     ///< ACC sync error
+  MADS_DISENGAGE_REASON_HEARTBEAT_ENGAGED_MISMATCH = 32,  ///< Heartbeat mismatch
 } DisengageReason;
 
 // ===============================
@@ -66,7 +66,7 @@ typedef enum __attribute__((packed)) {
 // ===============================
 
 typedef struct {
-  DisengageReason active_reason;   // The reason that actually disengaged controls
+  DisengageReason active_reason;    // The reason that actually disengaged controls
   DisengageReason pending_reasons;  // All conditions that would've prevented engagement while controls were disengaged
 } DisengageState;
 

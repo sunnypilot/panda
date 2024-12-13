@@ -36,8 +36,8 @@ ButtonState mads_button_press = MADS_BUTTON_UNAVAILABLE;
 MADSState m_mads_state;
 
 // state for mads controls_allowed_lat timeout logic
-bool heartbeat_engaged_mads = false; // MADS enabled, passed in heartbeat USB command
-uint32_t heartbeat_engaged_mads_mismatches = 0U; // count of mismatches between heartbeat_engaged_mads and controls_allowed_lat
+bool heartbeat_engaged_mads = false;  // MADS enabled, passed in heartbeat USB command
+uint32_t heartbeat_engaged_mads_mismatches = 0U;  // count of mismatches between heartbeat_engaged_mads and controls_allowed_lat
 
 // ===============================
 // State Update Helpers
@@ -101,7 +101,7 @@ static void m_update_binary_state(BinaryStateTracking *state) {
  * @return void
  */
 static bool m_update_control_state(void) {
-  bool process_controls = true;
+  bool allowed = true;
 
   // Initial control requests from button or ACC transitions
   if ((m_mads_state.acc_main.transition == MADS_EDGE_RISING) || (m_mads_state.mads_button.transition == MADS_EDGE_RISING)) {
@@ -111,27 +111,27 @@ static bool m_update_control_state(void) {
   // Primary control blockers - these prevent any further control processing
   if (m_mads_state.acc_main.transition == MADS_EDGE_FALLING) {
     mads_exit_controls(MADS_DISENGAGE_REASON_ACC_MAIN_OFF);
-    process_controls = false; // No matter what, no further control processing on this cycle
+    allowed = false;  // No matter what, no further control processing on this cycle
   }
 
   // Secondary control conditions - only checked if primary conditions don't block further control processing
-  if (process_controls && m_mads_state.disengage_lateral_on_brake) {
+  if (allowed && m_mads_state.disengage_lateral_on_brake) {
     // Brake rising edge immediately blocks controls
+    // Brake release might request controls if brake was the ONLY reason for disengagement
     if (m_mads_state.braking.transition == MADS_EDGE_RISING) {
       mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
-      process_controls = false;
-    }
-    // Brake release might request controls if brake was the ONLY reason for disengagement
-    else if ((m_mads_state.braking.transition == MADS_EDGE_FALLING) && (m_mads_state.current_disengage.active_reason == MADS_DISENGAGE_REASON_BRAKE) && (m_mads_state.current_disengage.pending_reasons == MADS_DISENGAGE_REASON_BRAKE)) {
+      allowed = false;
+    } else if ((m_mads_state.braking.transition == MADS_EDGE_FALLING) &&
+               (m_mads_state.current_disengage.active_reason == MADS_DISENGAGE_REASON_BRAKE) &&
+               (m_mads_state.current_disengage.pending_reasons == MADS_DISENGAGE_REASON_BRAKE)) {
       m_mads_state.controls_requested_lat = true;
     } else if (m_mads_state.braking.current) {
-      process_controls = false;
+      allowed = false;
     } else {
-      // Do nothing
     }
   }
 
-  return process_controls;
+  return allowed;
 }
 
 static void m_publish_state(bool allowed) {
@@ -178,8 +178,8 @@ inline void mads_exit_controls(const DisengageReason reason) {
 
   if (m_mads_state.controls_allowed_lat) {
     m_mads_state.current_disengage.active_reason = reason;
-    m_mads_state.controls_allowed_lat = false;
     m_mads_state.controls_requested_lat = false;
+    m_mads_state.controls_allowed_lat = false;
   }
 }
 
@@ -199,7 +199,7 @@ inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_ma
   m_update_binary_state(&m_mads_state.braking);
   m_update_button_state(&m_mads_state.mads_button);
 
-  const bool allowed = m_update_control_state();
+  const bool mads_allowed = m_update_control_state();
 
-  m_publish_state(allowed);
+  m_publish_state(mads_allowed);
 }
