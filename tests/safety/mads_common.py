@@ -168,7 +168,52 @@ class MadsCommonBase(unittest.TestCase):
     finally:
       self._mads_states_cleanup()
 
-  def test_allow_engage_with_brake_pressed(self):
+  def test_engage_with_brake_pressed(self):
+    try:
+      self._lkas_button_msg(False)
+    except NotImplementedError:
+      raise unittest.SkipTest("Skipping test because MADS button is not supported")
+
+    try:
+      for enable_mads in (True, False):
+        with self.subTest("enable_mads", enable_mads=enable_mads):
+          for disengage_lateral_on_brake in (True, False):
+            with self.subTest("disengage_lateral_on_brake", disengage_lateral_on_brake=disengage_lateral_on_brake):
+              with self.subTest("mads_button"):
+                self._mads_states_cleanup()
+                self.safety.set_mads_params(enable_mads, disengage_lateral_on_brake)
+
+                # Brake press rising edge
+                self._rx(self._user_brake_msg(True))
+                self._rx(self._lkas_button_msg(True))
+                self._rx(self._speed_msg(0))
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+
+                # Continuous braking after the first frame of brake press rising edge
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                for _ in range(400):
+                  self._rx(self._user_brake_msg(True))
+                  self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+
+              with self.subTest("acc_main_on"):
+                self._mads_states_cleanup()
+                self.safety.set_mads_params(enable_mads, disengage_lateral_on_brake)
+
+                # Brake press rising edge
+                self._rx(self._user_brake_msg(True))
+                self.safety.set_acc_main_on(True)
+                self._rx(self._speed_msg(0))
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+
+                # Continuous braking after the first frame of brake press rising edge
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                for _ in range(400):
+                  self._rx(self._user_brake_msg(True))
+                  self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+
+  def test_disengage_lateral_on_brake_with_pressed_and_released(self):
     try:
       for enable_mads in (True, False):
         with self.subTest("enable_mads", enable_mads=enable_mads):
@@ -177,11 +222,15 @@ class MadsCommonBase(unittest.TestCase):
               self._mads_states_cleanup()
               self.safety.set_mads_params(enable_mads, disengage_lateral_on_brake)
 
-              self._rx(self._user_brake_msg(True))
-              self.safety.set_controls_requested_lat(True)
-              self._rx(self._user_brake_msg(True))
+              self._rx(self._lkas_button_msg(True))
+              self._rx(self._speed_msg(0))
               self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+
               self._rx(self._user_brake_msg(True))
+              self._rx(self._speed_msg(0))
+              self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+              self._rx(self._user_brake_msg(False))
+              self._rx(self._speed_msg(0))
               self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
