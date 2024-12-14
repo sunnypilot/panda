@@ -1,9 +1,9 @@
 #pragma once
 
+#include "sunnypilot/safety_mads.h"
+
 #include "safety_declarations.h"
 #include "can.h"
-
-#include "sunnypilot/safety_mads.h"
 
 // include the safety policies.
 #include "safety/safety_defaults.h"
