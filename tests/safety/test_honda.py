@@ -404,7 +404,7 @@ class TestHondaNidecPcmAltSafety(TestHondaNidecPcmSafety):
     self.safety.init_tests()
 
   def _acc_state_msg(self, main_on):
-    values = {"MAIN_ON": 1 if main_on else 0, "COUNTER": self.cnt_acc_state % 4}
+    values = {"MAIN_ON": main_on, "COUNTER": self.cnt_acc_state % 4}
     self.__class__.cnt_acc_state += 1
     return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
 
