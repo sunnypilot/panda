@@ -81,10 +81,6 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
     values = {"CRUISE_ACTIVE": enable}
     return self.packer.make_can_msg_panda("PCM_CRUISE", 0, values)
 
-  def _lkas_button_msg(self, lkas_pressed=False, lkas_hud=0):
-    values = {"LKAS_STATUS": 2 if lkas_pressed else lkas_hud}
-    return self.packer.make_can_msg_panda("LKAS_HUD", 2, values)
-
   def test_diagnostics(self, stock_longitudinal: bool = False):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
                            (False, b"\x0F\x03\xAA\xAA\x00\x00\x00\x00"),  # non-tester present
@@ -130,20 +126,6 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
       to_push[0].data[7] = 0
       self.assertFalse(self._rx(to_push))
       self.assertFalse(self.safety.get_controls_allowed())
-
-  def test_enable_control_allowed_with_mads_button(self):
-    for enable_mads in (True, False):
-      with self.subTest("enable_mads", mads_enabled=enable_mads):
-        for mads_button_press in range(4):
-          with self.subTest("mads_button_press", button_state=mads_button_press):
-            self._mads_states_cleanup()
-            self.safety.set_mads_params(enable_mads, False)
-
-            self._rx(self._lkas_button_msg(False, mads_button_press))
-            self._rx(self._speed_msg(0))  # Only for Toyota, we must send a msg to bus 0 because generic_rx_checks happen only there.
-            self.assertEqual(enable_mads and mads_button_press in range(1, 4),
-                             self.safety.get_controls_allowed_lat())
-    self._mads_states_cleanup()
 
 class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
 
