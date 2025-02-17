@@ -1,0 +1,34 @@
+import os
+import copy
+
+Import('build_project')
+
+build_projects = {}
+
+build_projects["escc"] = {
+  "MAIN": "../main.c",
+  "BOOTSTUB": "../bootstub.c",
+  "STARTUP_FILE": File("../stm32f4/startup_stm32f413xx.s"),
+  "LINKER_SCRIPT": File("../stm32f4/stm32f4_flash.ld"),
+  "APP_START_ADDRESS": "0x8004000",
+  "PROJECT_FLAGS": [
+    "-mcpu=cortex-m4",
+    "-mhard-float",
+    "-DSTM32F4",
+    "-DSTM32F413xx",
+    "-mfpu=fpv4-sp-d16",
+    "-fsingle-precision-constant",
+    "-Os",
+    "-g",
+  ],
+}
+
+for project_name, project in build_projects.items():
+  flags = [
+    "-DPANDA",
+    "-DESCC",
+  ]
+  if ("ENABLE_SPI" in os.environ or "h7" in project_name) and not project_name.startswith('pedal'):
+    flags.append('-DENABLE_SPI')
+
+  build_project(project_name, project, flags, ["ESCC"])

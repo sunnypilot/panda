@@ -62,7 +62,9 @@ def to_c_uint32(x):
   return "{" + 'U,'.join(map(str, nums)) + "U}"
 
 
-def build_project(project_name, project, extra_flags):
+def build_project(project_name, project, extra_flags, cppdefines=None):
+  cppdefines = cppdefines or []
+  print(f"{project_name} -> CPPDEFINES [{', '.join(cppdefines)}]")
   linkerscript_fn = File(project["LINKER_SCRIPT"]).srcnode().relpath
 
   flags = project["PROJECT_FLAGS"] + extra_flags + common_flags + [
@@ -101,6 +103,7 @@ def build_project(project_name, project, extra_flags):
       'Objcopy': Builder(generator=objcopy, suffix='.bin', src_suffix='.elf')
     },
     tools=["default", "compilation_db"],
+    CPPDEFINES=cppdefines,
   )
 
   startup = env.Object(f"obj/startup_{project_name}", project["STARTUP_FILE"])
@@ -179,12 +182,15 @@ with open("board/obj/cert.h", "w") as f:
   for cert in certs:
     f.write("\n".join(cert) + "\n")
 
-# panda fw
-SConscript('board/SConscript')
-
-# panda jungle fw
-SConscript('board/jungle/SConscript')
-
-# test files
-if GetOption('extras'):
-  SConscript('tests/libpanda/SConscript')
+if not GetOption('escc'): # if we are building ESCC, we don't build anything else
+  # panda fw
+  SConscript('board/SConscript')
+  
+  # panda jungle fw
+  SConscript('board/jungle/SConscript')
+  
+  # test files
+  if GetOption('extras'):
+    SConscript('tests/libpanda/SConscript')
+else:
+  SConscript('board/escc/SConscript')

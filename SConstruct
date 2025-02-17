@@ -20,6 +20,10 @@ AddOption('--mutation',
           action='store_true',
           help='generate mutation-ready code')
 
+AddOption('--escc',
+          action='store_true',
+          help='build escc firmware')
+
 env = Environment(
   COMPILATIONDB_USE_ABSPATH=True,
   tools=["default", "compilation_db"],
