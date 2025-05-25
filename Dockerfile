@@ -35,7 +35,6 @@ COPY setup.py __init__.py $PYTHONPATH/panda/
 COPY python/__init__.py $PYTHONPATH/panda/python/
 RUN pip3 install --break-system-packages --no-cache-dir $PYTHONPATH/panda/[dev]
 
-# TODO: this should be a "pip install" or not even in this repo at all
 RUN git config --global --add safe.directory $PYTHONPATH/panda
 ENV OPENDBC_REF="108513ae6329d7e533e4de00dccd5d585592aab3"
 RUN cd /tmp/ && \
