@@ -125,6 +125,11 @@ bool is_car_safety_mode(uint16_t mode) {
          (mode != SAFETY_ELM327);
 }
 
+bool is_car_safety_mode_escc(uint16_t mode) {
+  return is_car_safety_mode(mode) && (mode != SAFETY_HYUNDAI_CANFD_ADAS_DRV_INTERCEPTOR);
+}
+#define is_car_safety_mode is_car_safety_mode_escc
+
 // ***************************** main code *****************************
 
 // cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
@@ -339,7 +344,7 @@ int main(void) {
   }
 
   // init to SILENT and can silent
-  set_safety_mode(SAFETY_SILENT, 0U);
+  set_safety_mode(SAFETY_HYUNDAI_CANFD_ADAS_DRV_INTERCEPTOR, 1U);
 
   // enable CAN TXs
   enable_can_transceivers(true);

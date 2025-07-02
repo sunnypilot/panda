@@ -13,7 +13,7 @@ classifiers = [
 ]
 dependencies = [
   "libusb1",
-    "opendbc @ git+https://github.com/sunnypilot/opendbc.git@c87940a6b5f0b74b8df95f5ef24d4003e7b932d4#egg=opendbc",
+    "opendbc @ git+https://github.com/sunnypilot/opendbc.git@ebd1d5b584c70a02ed3b08499e0a8f1f51d1b8d2#egg=opendbc",
 ]
 
 [project.optional-dependencies]
