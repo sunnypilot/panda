@@ -1,7 +1,7 @@
 #pragma once
 
 // ***************************** Definitions *****************************
-#define FIFO_SIZE_INT 0x400U
+#define FIFO_SIZE_INT 0x200U
 
 typedef struct uart_ring {
   volatile uint16_t w_ptr_tx;
