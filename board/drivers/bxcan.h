@@ -4,7 +4,7 @@
 //       CAN2_TX, CAN2_RX0, CAN2_SCE
 //       CAN3_TX, CAN3_RX0, CAN3_SCE
 
-CAN_TypeDef *cans[CAN_ARRAY_SIZE] = {CAN1, CAN2, CAN3};
+CAN_TypeDef *cans[PANDA_CAN_CNT] = {CAN1, CAN2, CAN3};
 uint8_t can_irq_number[CAN_IRQS_ARRAY_SIZE][CAN_IRQS_ARRAY_SIZE] = {
   { CAN1_TX_IRQn, CAN1_RX0_IRQn, CAN1_SCE_IRQn },
   { CAN2_TX_IRQn, CAN2_RX0_IRQn, CAN2_SCE_IRQn },
@@ -20,7 +20,7 @@ bool can_set_speed(uint8_t can_number) {
     CANx,
     bus_config[bus_number].can_speed,
     can_loopback,
-    (unsigned int)(can_silent) & (1U << can_number)
+    can_silent
   );
   return ret;
 }
@@ -138,9 +138,6 @@ void can_rx(uint8_t can_number) {
 
   while ((CANx->RF0R & CAN_RF0R_FMP0) != 0U) {
     can_health[can_number].total_rx_cnt += 1U;
-
-    // can is live
-    pending_can_live = 1;
 
     // add to my fifo
     CANPacket_t to_push;
