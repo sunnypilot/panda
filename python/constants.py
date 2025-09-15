@@ -38,6 +38,7 @@ F4Config = McuConfig(
   "bootstub.panda.bin",
 )
 
+
 H7Config = McuConfig(
   "STM32H7",
   0x483,
