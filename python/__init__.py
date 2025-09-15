@@ -126,6 +126,7 @@ class Panda:
   HEALTH_STRUCT = struct.Struct("<IIIIIIIIBBBBBHBBBHfBBHHHB")
   CAN_HEALTH_STRUCT = struct.Struct("<BIBBBBBBBBIIIIIIIHHBBBIIII")
 
+  F4_DEVICES = [HW_TYPE_WHITE, HW_TYPE_BLACK]
   H7_DEVICES = [HW_TYPE_RED_PANDA, HW_TYPE_TRES, HW_TYPE_CUATRO]
   SUPPORTED_DEVICES = H7_DEVICES
 
@@ -633,7 +634,9 @@ class Panda:
 
   def get_mcu_type(self) -> McuType:
     hw_type = self.get_type()
-    if hw_type in Panda.H7_DEVICES:
+    if hw_type in Panda.F4_DEVICES:
+      return McuType.F4
+    elif hw_type in Panda.H7_DEVICES:
       return McuType.H7
     raise ValueError(f"unknown HW type: {hw_type}")
 
