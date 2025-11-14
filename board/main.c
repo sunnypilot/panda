@@ -55,12 +55,12 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
     case SAFETY_SILENT:
       set_intercept_relay(false, false);
       current_board->set_can_mode(CAN_MODE_NORMAL);
-      can_silent = ALL_CAN_SILENT;
+      can_silent = true;
       break;
     case SAFETY_NOOUTPUT:
       set_intercept_relay(false, false);
       current_board->set_can_mode(CAN_MODE_NORMAL);
-      can_silent = ALL_CAN_LIVE;
+      can_silent = false;
       break;
     case SAFETY_ELM327:
       set_intercept_relay(false, false);
@@ -75,14 +75,14 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       } else {
         current_board->set_can_mode(CAN_MODE_NORMAL);
       }
-      can_silent = ALL_CAN_LIVE;
+      can_silent = false;
       break;
     default:
       set_intercept_relay(true, false);
       heartbeat_counter = 0U;
       heartbeat_lost = false;
       current_board->set_can_mode(CAN_MODE_NORMAL);
-      can_silent = ALL_CAN_LIVE;
+      can_silent = false;
       break;
   }
   can_init_all();
@@ -118,6 +118,7 @@ static void tick_handler(void) {
   static uint32_t controls_allowed_countdown = 0;
   static uint8_t prev_harness_status = HARNESS_STATUS_NC;
   static uint8_t loop_counter = 0U;
+  static bool relay_malfunction_prev = false;
 
   if (TICK_TIMER->SR != 0U) {
 
@@ -129,6 +130,15 @@ static void tick_handler(void) {
     harness_tick();
     simple_watchdog_kick();
     sound_tick();
+
+    if (relay_malfunction_prev != relay_malfunction) {
+      if (relay_malfunction) {
+        fault_occurred(FAULT_RELAY_MALFUNCTION);
+      } else {
+        fault_recovered(FAULT_RELAY_MALFUNCTION);
+      }
+    }
+    relay_malfunction_prev = relay_malfunction;
 
     // re-init everything that uses harness status
     if (harness.status != prev_harness_status) {
@@ -143,14 +153,7 @@ static void tick_handler(void) {
 
     // decimated to 1Hz
     if (loop_counter == 0U) {
-      can_live = pending_can_live;
-
       //puth(usart1_dma); print(" "); puth(DMA2_Stream5->M0AR); print(" "); puth(DMA2_Stream5->NDTR); print("\n");
-
-      // reset this every 16th pass
-      if ((uptime_cnt & 0xFU) == 0U) {
-        pending_can_live = 0;
-      }
       #ifdef DEBUG
         print("** blink ");
         print("rx:"); puth4(can_rx_q.r_ptr); print("-"); puth4(can_rx_q.w_ptr); print("  ");
@@ -303,7 +306,7 @@ int main(void) {
   microsecond_timer_init();
 
   current_board->set_siren(false);
-  if (current_board->fan_max_rpm > 0U) {
+  if (current_board->has_fan) {
     fan_init();
   }
 
