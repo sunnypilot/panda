@@ -239,7 +239,7 @@ class Panda:
     logger.debug("connected")
 
     hw_type = self.get_type()
-    if hw_type in Panda.DEPRECATED_DEVICES:
+    if hw_type not in self.SUPPORTED_DEVICES:
       print("WARNING: Using deprecated HW")
 
     # disable openpilot's heartbeat checks
@@ -473,7 +473,7 @@ class Panda:
       return
 
     hw_type = self.get_type()
-    if hw_type in Panda.DEPRECATED_DEVICES:
+    if hw_type not in self.SUPPORTED_DEVICES:
       raise RuntimeError(f"HW type {hw_type.hex()} is deprecated and can no longer be flashed.")
 
     if not fn:
