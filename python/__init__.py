@@ -131,11 +131,6 @@ class Panda:
 
   INTERNAL_DEVICES = (HW_TYPE_TRES, HW_TYPE_CUATRO)
 
-  MAX_FAN_RPMs = {
-    HW_TYPE_TRES: 6600,
-    HW_TYPE_CUATRO: 5000,
-  }
-
   HARNESS_STATUS_NC = 0
   HARNESS_STATUS_NORMAL = 1
   HARNESS_STATUS_FLIPPED = 2
@@ -149,9 +144,9 @@ class Panda:
     self._can_speed_kbps = can_speed_kbps
 
     if cli and serial is None:
-        self._connect_serial = self._cli_select_panda()
+      self._connect_serial = self._cli_select_panda()
     else:
-        self._connect_serial = serial
+      self._connect_serial = serial
 
     # connect and set mcu type
     self.connect(claim)
