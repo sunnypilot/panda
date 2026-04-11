@@ -62,6 +62,14 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       current_board->set_can_mode(CAN_MODE_NORMAL);
       can_silent = false;
       break;
+    case SAFETY_NOOUTPUT_PASSTHROUGH:
+      // relay engaged (bus 0 and 2 physically separated), forwarding enabled via
+      // disable_forwarding=false in safety_config, all TX blocked. Used for bus
+      // origin detection during fingerprinting.
+      set_intercept_relay(true, false);
+      current_board->set_can_mode(CAN_MODE_NORMAL);
+      can_silent = false;
+      break;
     case SAFETY_ELM327:
       set_intercept_relay(false, false);
       heartbeat_counter = 0U;
@@ -91,6 +99,7 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
 bool is_car_safety_mode(uint16_t mode) {
   return (mode != SAFETY_SILENT) &&
          (mode != SAFETY_NOOUTPUT) &&
+         (mode != SAFETY_NOOUTPUT_PASSTHROUGH) &&
          (mode != SAFETY_ALLOUTPUT) &&
          (mode != SAFETY_ELM327);
 }
