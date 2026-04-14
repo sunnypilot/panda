@@ -44,6 +44,9 @@ static int get_health_pkt(void *dat) {
 
   health->sound_output_level_pkt = sound_output_level;
 
+  health->controls_allowed_lateral_pkt = controls_allowed || controls_allowed_lateral;
+  health->controls_allowed_longitudinal_pkt = controls_allowed;
+
   return sizeof(*health);
 }
 
@@ -300,7 +303,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         heartbeat_lost = false;
         heartbeat_disabled = false;
         heartbeat_engaged = (req->param1 == 1U);
-        heartbeat_engaged_mads = true; // FIXME-SP: Implement proper heartbeat check from sunnypilot
+        heartbeat_engaged_mads = (req->param2 == 1U);
         break;
       }
     // **** 0xf6: set siren enabled

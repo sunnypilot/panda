@@ -13,8 +13,8 @@ class MadsCommonBase(unittest.TestCase):
 
   def _mads_states_cleanup(self):
     self.safety.set_mads_button_press(-1)
-    self.safety.set_controls_allowed_lat(False)
-    self.safety.set_controls_requested_lat(False)
+    self.safety.set_controls_allowed_lateral(False)
+    self.safety.set_controls_requested_lateral(False)
     self.safety.set_acc_main_on(False)
     self.safety.set_mads_params(False, False)
     self.safety.set_heartbeat_engaged_mads(True)
@@ -37,7 +37,7 @@ class MadsCommonBase(unittest.TestCase):
           self._rx(self._speed_msg(0))
           self._rx(self._lkas_button_msg(False))
           self._rx(self._speed_msg(0))
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -55,7 +55,7 @@ class MadsCommonBase(unittest.TestCase):
           self.safety.set_mads_params(enable_mads, False)
           self._rx(self._acc_state_msg(True))
           self._rx(self._speed_msg(0))
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -70,7 +70,7 @@ class MadsCommonBase(unittest.TestCase):
 
               self.safety.set_mads_button_press(mads_button_press)
               self._rx(self._speed_msg(0))
-              self.assertEqual(enable_mads and mads_button_press == 1, self.safety.get_controls_allowed_lat())
+              self.assertEqual(enable_mads and mads_button_press == 1, self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -88,21 +88,21 @@ class MadsCommonBase(unittest.TestCase):
               self.safety.set_acc_main_on(acc_main_on)
               self._rx(self._speed_msg(0))
               expected_lat = enable_mads and acc_main_on
-              self.assertEqual(expected_lat, self.safety.get_controls_allowed_lat(),
+              self.assertEqual(expected_lat, self.safety.get_controls_allowed_lateral(),
                                f"Expected lat: [{expected_lat}] when acc_main_on goes to [{acc_main_on}]")
 
               # Test transition to opposite state
               self.safety.set_acc_main_on(not acc_main_on)
               self._rx(self._speed_msg(0))
               expected_lat = enable_mads and not acc_main_on
-              self.assertEqual(expected_lat, self.safety.get_controls_allowed_lat(),
+              self.assertEqual(expected_lat, self.safety.get_controls_allowed_lateral(),
                                f"Expected lat: [{expected_lat}] when acc_main_on goes from [{acc_main_on}] to [{not acc_main_on}]")
 
               # Test transition back to initial state
               self.safety.set_acc_main_on(acc_main_on)
               self._rx(self._speed_msg(0))
               expected_lat = enable_mads and acc_main_on
-              self.assertEqual(expected_lat, self.safety.get_controls_allowed_lat(),
+              self.assertEqual(expected_lat, self.safety.get_controls_allowed_lateral(),
                                f"Expected lat: [{expected_lat}] when acc_main_on goes from [{not acc_main_on}] to [{acc_main_on}]")
     finally:
       self._mads_states_cleanup()
@@ -116,11 +116,11 @@ class MadsCommonBase(unittest.TestCase):
 
           self.safety.set_acc_main_on(True)
           self._rx(self._speed_msg(0))
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
 
           self.safety.set_acc_main_on(False)
           self._rx(self._speed_msg(0))
-          self.assertFalse(self.safety.get_controls_allowed_lat())
+          self.assertFalse(self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -142,15 +142,15 @@ class MadsCommonBase(unittest.TestCase):
       self.safety.set_mads_params(True, True)
 
       self._rx(self._user_brake_msg(False))
-      self.safety.set_controls_requested_lat(True)
-      self.safety.set_controls_allowed_lat(True)
+      self.safety.set_controls_requested_lateral(True)
+      self.safety.set_controls_allowed_lateral(True)
 
       self._rx(self._user_brake_msg(True))
       # Test we pause lateral
-      self.assertFalse(self.safety.get_controls_allowed_lat())
+      self.assertFalse(self.safety.get_controls_allowed_lateral())
       # Make sure we can re-gain lateral actuation
       self._rx(self._user_brake_msg(False))
-      self.assertTrue(self.safety.get_controls_allowed_lat())
+      self.assertTrue(self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -160,11 +160,11 @@ class MadsCommonBase(unittest.TestCase):
       self.safety.set_mads_params(True, False)
 
       self._rx(self._user_brake_msg(False))
-      self.safety.set_controls_requested_lat(True)
-      self.safety.set_controls_allowed_lat(True)
+      self.safety.set_controls_requested_lateral(True)
+      self.safety.set_controls_allowed_lateral(True)
 
       self._rx(self._user_brake_msg(True))
-      self.assertTrue(self.safety.get_controls_allowed_lat())
+      self.assertTrue(self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -187,13 +187,13 @@ class MadsCommonBase(unittest.TestCase):
                 self._rx(self._user_brake_msg(True))
                 self._rx(self._lkas_button_msg(True))
                 self._rx(self._speed_msg(0))
-                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lateral())
 
                 # Continuous braking after the first frame of brake press rising edge
-                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lateral())
                 for _ in range(400):
                   self._rx(self._user_brake_msg(True))
-                  self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                  self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lateral())
 
               with self.subTest("acc_main_on"):
                 self._mads_states_cleanup()
@@ -203,13 +203,13 @@ class MadsCommonBase(unittest.TestCase):
                 self._rx(self._user_brake_msg(True))
                 self.safety.set_acc_main_on(True)
                 self._rx(self._speed_msg(0))
-                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lateral())
 
                 # Continuous braking after the first frame of brake press rising edge
-                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lateral())
                 for _ in range(400):
                   self._rx(self._user_brake_msg(True))
-                  self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+                  self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -222,20 +222,20 @@ class MadsCommonBase(unittest.TestCase):
               self._mads_states_cleanup()
               self.safety.set_mads_params(enable_mads, disengage_lateral_on_brake)
 
-              # Set controls_allowed_lat rising edge
-              self.safety.set_controls_requested_lat(True)
+              # Set controls_allowed_lateral rising edge
+              self.safety.set_controls_requested_lateral(True)
               self._rx(self._speed_msg(0))
-              self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+              self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
 
-              # User brake press, validate controls_allowed_lat is false
+              # User brake press, validate controls_allowed_lateral is false
               self._rx(self._user_brake_msg(True))
               self._rx(self._speed_msg(0))
-              self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lat())
+              self.assertEqual(enable_mads and not disengage_lateral_on_brake, self.safety.get_controls_allowed_lateral())
 
-              # User brake release, validate controls_allowed_lat is true
+              # User brake release, validate controls_allowed_lateral is true
               self._rx(self._user_brake_msg(False))
               self._rx(self._speed_msg(0))
-              self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+              self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -244,22 +244,22 @@ class MadsCommonBase(unittest.TestCase):
       self._mads_states_cleanup()
       self.safety.set_mads_params(True, True)
 
-      self.safety.set_controls_requested_lat(True)
+      self.safety.set_controls_requested_lateral(True)
 
-      # Vehicle moving, validate controls_allowed_lat is true
+      # Vehicle moving, validate controls_allowed_lateral is true
       for _ in range(10):
         self._rx(self._speed_msg(10))
-        self.assertTrue(self.safety.get_controls_allowed_lat())
+        self.assertTrue(self.safety.get_controls_allowed_lateral())
 
       # User braked, vehicle slowed down in 10 frames, then stopped for 10 frames
-      # Validate controls_allowed_lat is false
+      # Validate controls_allowed_lateral is false
       self._rx(self._user_brake_msg(True))
       for _ in range(10):
         self._rx(self._speed_msg(5))
-        self.assertFalse(self.safety.get_controls_allowed_lat())
+        self.assertFalse(self.safety.get_controls_allowed_lateral())
       for _ in range(10):
         self._rx(self._speed_msg(0))
-        self.assertFalse(self.safety.get_controls_allowed_lat())
+        self.assertFalse(self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -307,15 +307,15 @@ class MadsCommonBase(unittest.TestCase):
           self._rx(self._speed_msg(0))
           self._rx(self._lkas_button_msg(False))
           self._rx(self._speed_msg(0))
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
 
           self._rx(self._acc_state_msg(True))
           self._rx(self._speed_msg(0))
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
 
           self._rx(self._acc_state_msg(False))
           self._rx(self._speed_msg(0))
-          self.assertFalse(self.safety.get_controls_allowed_lat())
+          self.assertFalse(self.safety.get_controls_allowed_lateral())
     finally:
       self._mads_states_cleanup()
 
@@ -334,22 +334,22 @@ class MadsCommonBase(unittest.TestCase):
       self.safety.set_mads_params(True, True)  # enable MADS with disengage on brake
 
       # Initial state
-      self.safety.set_controls_allowed_lat(True)
+      self.safety.set_controls_allowed_lateral(True)
       self._rx(self._speed_msg(0))
-      self.assertTrue(self.safety.get_controls_allowed_lat())
+      self.assertTrue(self.safety.get_controls_allowed_lateral())
 
       # Brake press disengages lateral
       self._rx(self._user_brake_msg(True))
-      self.assertFalse(self.safety.get_controls_allowed_lat())
+      self.assertFalse(self.safety.get_controls_allowed_lateral())
 
       # Request controls while braking
-      self.safety.set_controls_requested_lat(True)
-      self.assertFalse(self.safety.get_controls_allowed_lat())
+      self.safety.set_controls_requested_lateral(True)
+      self.assertFalse(self.safety.get_controls_allowed_lateral())
 
       # Release brake - should enable since controls were requested
       self._rx(self._user_brake_msg(False))
       self._rx(self._speed_msg(0))
-      self.assertTrue(self.safety.get_controls_allowed_lat())
+      self.assertTrue(self.safety.get_controls_allowed_lateral())
 
     finally:
       self._mads_states_cleanup()
@@ -371,21 +371,21 @@ class MadsCommonBase(unittest.TestCase):
       # Initial state - enable with ACC main
       self.safety.set_acc_main_on(True)
       self._rx(self._speed_msg(0))
-      self.assertTrue(self.safety.get_controls_allowed_lat())
+      self.assertTrue(self.safety.get_controls_allowed_lateral())
 
       # Brake press disengages lateral
       self._rx(self._user_brake_msg(True))
-      self.assertFalse(self.safety.get_controls_allowed_lat())
+      self.assertFalse(self.safety.get_controls_allowed_lateral())
 
       # Turn ACC main off while braking
       self.safety.set_acc_main_on(False)
       self._rx(self._speed_msg(0))
-      self.assertFalse(self.safety.get_controls_allowed_lat())
+      self.assertFalse(self.safety.get_controls_allowed_lateral())
 
       # Release brake - should remain disabled since ACC main is off
       self._rx(self._user_brake_msg(False))
       self._rx(self._speed_msg(0))
-      self.assertFalse(self.safety.get_controls_allowed_lat())
+      self.assertFalse(self.safety.get_controls_allowed_lateral())
 
     finally:
       self._mads_states_cleanup()
