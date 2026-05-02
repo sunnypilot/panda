@@ -7,5 +7,5 @@ cd ..
 scons -u -j$(nproc) --escc
 cd escc
 
-$DFU_UTIL -d 0483:df11 -a 0 -s 0x08004000 -D obj/escc.bin.signed
-$DFU_UTIL -d 0483:df11 -a 0 -s 0x08000000:leave -D obj/bootstub.escc.bin
+$DFU_UTIL -d 0483:df11 -a 0 -s 0x08020000 -D obj/escc_h7.bin.signed
+$DFU_UTIL -d 0483:df11 -a 0 -s 0x08000000:leave -D obj/bootstub.escc_h7.bin

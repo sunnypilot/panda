@@ -23,6 +23,8 @@
 #include "safety/safety_elm327.h"
 #include "safety/safety_body.h"
 
+#include "safety_sunnypilot_common.h"
+
 #ifdef ESCC
 #include "safety/safety_hyundai_escc.h"
 #endif

@@ -1,11 +1,12 @@
 import os
 import copy
 
-Import('build_project')
+Import('build_project', 'base_project_h7')
 
 build_projects = {}
 
-build_projects["escc"] = {
+# RENAMED from "escc" to "panda"
+build_projects["panda"] = {
   "MAIN": "../main.c",
   "BOOTSTUB": "../bootstub.c",
   "STARTUP_FILE": File("../stm32f4/startup_stm32f413xx.s"),
@@ -22,6 +23,10 @@ build_projects["escc"] = {
     "-g",
   ],
 }
+
+# RENAMED from "escc_h7" to "panda_h7"
+build_projects["panda_h7"] = copy.deepcopy(base_project_h7)
+build_projects["panda_h7"]["MAIN"] = "../main.c"
 
 for project_name, project in build_projects.items():
   flags = [

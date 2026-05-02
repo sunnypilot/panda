@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 import os
+import time
 import subprocess
-import argparse
-import shutil  # Don't forget to import shutil here too!
+import shutil
 
-from panda import Panda
+from panda import Panda, PandaDFU
 
 board_path = os.path.dirname(os.path.realpath(__file__))
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--all", action="store_true", help="Recover all Panda devices")
-  args = parser.parse_args()
-
-  # Note the ../.. and the --escc flag!
   subprocess.check_call(f"scons -C {board_path}/../.. -j$(nproc) {board_path} --escc", shell=True)
 
   # --- HACK: SCons outputs our localized ESCC builds to 'board/escc/obj/'.
@@ -25,15 +20,17 @@ if __name__ == "__main__":
   for f in os.listdir(f"{board_path}/obj"):
       shutil.copy(os.path.join(f"{board_path}/obj", f), f"{board_path}/../obj")
 
-  if args.all:
-    serials = Panda.list()
-    print(f"found {len(serials)} panda(s) - {serials}")
-  else:
-    serials = [None]
-
-  for s in serials:
+  for s in Panda.list():
     with Panda(serial=s) as p:
-      print("flashing", p.get_usb_serial())
-      # p.flash() auto-detects H7/F4 and picks the matching binary!
-      p.flash()
-  exit(1 if len(serials) == 0 else 0)
+      print(f"putting {p.get_usb_serial()} in DFU mode")
+      p.reset(enter_bootstub=True)
+      p.reset(enter_bootloader=True)
+
+  time.sleep(1)
+
+  dfu_serials = PandaDFU.list()
+  print(f"found {len(dfu_serials)} panda(s) in DFU - {dfu_serials}")
+  for s in dfu_serials:
+    print("flashing", s)
+    PandaDFU(s).recover()
+  exit(1 if len(dfu_serials) == 0 else 0)
