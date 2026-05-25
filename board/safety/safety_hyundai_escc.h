@@ -1,14 +1,26 @@
 #pragma once
 
+#include "drivers/can_common_declarations.h"
+
 #define DEVNULL_BUS (-1)
 #define CAR_BUS 0
 #define RADAR_BUS 2
+// Secondary backstop for radar isolation. FDCAN3 DAR is the primary protection
+// against a stuck TX FIFO; this keeps CAR->RADAR forwarding from exhausting tx3_q.
+#define RADAR_TX_QUEUE_MIN_SLOTS 50U
 
 bool scc_block_allowed = false;
 uint32_t sunnypilot_detected_last = 0;
 
 // Initialize bytes to send to 2AB
 ESCC_Msg escc = {0};
+
+static safety_config escc_init(uint16_t param) {
+  scc_block_allowed = false;
+  sunnypilot_detected_last = 0U;
+  // Reuse alloutput controls setup; ESCC forwarding does not read alloutput_passthrough.
+  return alloutput_init(param);
+}
 
 static void escc_rx_hook(const CANPacket_t* to_push) {
   const int bus = GET_BUS(to_push);
@@ -72,7 +84,7 @@ static int escc_fwd_hook(const int bus_src, const int addr) {
 #ifdef DEBUG
   print("escc_fwd_hook: "); putui(bus_src); print(" - "); puth4(addr); print(" scc_block_allowed: "); print(scc_block_allowed?"yes":"no" ); print("\n");
 #endif
-  // SCC messages are SCC11 (0x420), SCC12 (0x421), SCC13 (0x50A), SCC14 (0x389) 
+  // SCC messages are SCC11 (0x420), SCC12 (0x421), SCC13 (0x50A), SCC14 (0x389)
   const int is_scc_msg = addr == 0x420 || addr == 0x421 || addr == 0x50A || addr == 0x389;
 
   const uint32_t ts = MICROSECOND_TIMER->CNT;
@@ -82,22 +94,29 @@ static int escc_fwd_hook(const int bus_src, const int addr) {
     sunnypilot_detected_last = ts;
   }
 
-  // Default forwarding logic
-  int bus_dst = (bus_src == CAR_BUS) ? RADAR_BUS : CAR_BUS;
-
   // Update the scc_block_allowed status based on elapsed time
   const uint32_t ts_elapsed = get_ts_elapsed(ts, sunnypilot_detected_last);
   scc_block_allowed = (ts_elapsed <= 150000);
 
+  int bus_dst = DEVNULL_BUS;
+  if (bus_src == CAR_BUS) {
+    bus_dst = (can_slots_empty(can_queues[RADAR_BUS]) >= RADAR_TX_QUEUE_MIN_SLOTS) ? RADAR_BUS : DEVNULL_BUS;
+  } else if (bus_src == RADAR_BUS) {
+    bus_dst = CAR_BUS;
+  } else {
+    // ESCC only bridges the car bus and isolated radar spur.
+  }
+
   // If we are allowed to block, and this is an scc msg coming from radar (or somehow we are sending it TO the radar) we block
-  if (scc_block_allowed && is_scc_msg && (bus_src == RADAR_BUS || bus_dst == RADAR_BUS))
+  if (scc_block_allowed && is_scc_msg && (bus_src == RADAR_BUS || bus_dst == RADAR_BUS)) {
     bus_dst = DEVNULL_BUS;
+  }
 
   return bus_dst;
 }
 
 const safety_hooks hyundai_escc_hooks = {
-  .init = alloutput_init,
+  .init = escc_init,
   .rx = escc_rx_hook,
   .tx = escc_tx_hook,
   .fwd = escc_fwd_hook,

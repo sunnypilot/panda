@@ -151,8 +151,13 @@ bool llcan_init(FDCAN_GlobalTypeDef *FDCANx) {
   if (ret) {
     // Enable config change
     FDCANx->CCCR |= FDCAN_CCCR_CCE;
-    // Enable automatic retransmission
-    FDCANx->CCCR &= ~(FDCAN_CCCR_DAR);
+    // Disable automatic retransmission on FDCAN3/radar spur to prevent a missed ACK
+    // from pinning the single TX FIFO element and forcing core resets.
+    if (FDCANx == FDCAN3) {
+      FDCANx->CCCR |= FDCAN_CCCR_DAR;
+    } else {
+      FDCANx->CCCR &= ~(FDCAN_CCCR_DAR);
+    }
     // Enable transmission pause feature
     FDCANx->CCCR |= FDCAN_CCCR_TXP;
     // Disable protocol exception handling
