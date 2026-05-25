@@ -1,4 +1,5 @@
 #include "llfdcan_declarations.h"
+#include "drivers/can_common_declarations.h"
 
 // kbps multiplied by 10
 const uint32_t speeds[SPEEDS_ARRAY_SIZE] = {100U, 200U, 500U, 1000U, 1250U, 2500U, 5000U, 10000U};
@@ -151,9 +152,10 @@ bool llcan_init(FDCAN_GlobalTypeDef *FDCANx) {
   if (ret) {
     // Enable config change
     FDCANx->CCCR |= FDCAN_CCCR_CCE;
-    // Disable automatic retransmission on FDCAN3/radar spur to prevent a missed ACK
-    // from pinning the single TX FIFO element and forcing core resets.
-    if (FDCANx == FDCAN3) {
+    uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
+    // Disable automatic retransmission on the logical radar spur to prevent a
+    // missed ACK from pinning the single TX FIFO element and forcing core resets.
+    if (bus_number == 2U) {
       FDCANx->CCCR |= FDCAN_CCCR_DAR;
     } else {
       FDCANx->CCCR &= ~(FDCAN_CCCR_DAR);
