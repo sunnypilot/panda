@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import random
+import re
 import unittest
+from pathlib import Path
 from panda import Panda
 from panda.tests.libpanda import libpanda_py
 import panda.tests.safety.common as common
@@ -281,6 +283,79 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
 
   def test_disabled_ecu_alive(self):
     pass
+
+
+class TestHyundaiESCCFwdSafety(common.PandaSafetyTestBase):
+  # Keep in sync with board/safety.h.
+  SAFETY_HYUNDAI_ESCC = 29
+  TX_MSGS = []
+  RADAR_TX_QUEUE_MIN_SLOTS = 50
+  NON_SCC_ADDR = 0x123
+  SCC_ADDRS = (0x420, 0x421, 0x50A, 0x389)
+
+  def setUp(self):
+    self.safety = libpanda_py.libpanda
+    safety_h = Path(__file__).parents[2] / "board" / "safety.h"
+    match = re.search(r"#define\s+SAFETY_HYUNDAI_ESCC\s+(\d+)U", safety_h.read_text())
+    self.assertIsNotNone(match)
+    self.assertEqual(self.SAFETY_HYUNDAI_ESCC, int(match.group(1)))
+    if self.safety.set_safety_hooks(self.SAFETY_HYUNDAI_ESCC, 0) != 0:
+      raise unittest.SkipTest("SAFETY_HYUNDAI_ESCC is not compiled into libpanda")
+    self.safety.init_tests()
+    self._clear_radar_tx_queue()
+
+  def _clear_radar_tx_queue(self):
+    msg = libpanda_py.ffi.new('CANPacket_t *')
+    while self.safety.can_pop(self.safety.tx3_q, msg):
+      pass
+
+  def _fill_radar_tx_queue_to_empty_slots(self, empty_slots):
+    msg = common.make_msg(2, self.NON_SCC_ADDR, 8)
+    while self.safety.can_slots_empty(self.safety.tx3_q) > empty_slots:
+      self.assertTrue(self.safety.can_push(self.safety.tx3_q, msg))
+
+  def test_car_to_radar_forwards_when_radar_queue_has_space(self):
+    self.assertGreaterEqual(self.safety.can_slots_empty(self.safety.tx3_q), self.RADAR_TX_QUEUE_MIN_SLOTS)
+    self.assertEqual(2, self.safety.safety_fwd_hook(0, self.NON_SCC_ADDR))
+
+  def test_car_to_radar_drops_when_radar_queue_below_threshold(self):
+    self._fill_radar_tx_queue_to_empty_slots(self.RADAR_TX_QUEUE_MIN_SLOTS - 1)
+
+    self.assertEqual(self.RADAR_TX_QUEUE_MIN_SLOTS - 1, self.safety.can_slots_empty(self.safety.tx3_q))
+    self.assertEqual(-1, self.safety.safety_fwd_hook(0, self.NON_SCC_ADDR))
+
+  def test_car_to_radar_threshold_boundary(self):
+    self._fill_radar_tx_queue_to_empty_slots(self.RADAR_TX_QUEUE_MIN_SLOTS)
+    self.assertEqual(self.RADAR_TX_QUEUE_MIN_SLOTS, self.safety.can_slots_empty(self.safety.tx3_q))
+    self.assertEqual(2, self.safety.safety_fwd_hook(0, self.NON_SCC_ADDR))
+
+    self.assertTrue(self.safety.can_push(self.safety.tx3_q, common.make_msg(2, self.NON_SCC_ADDR, 8)))
+    self.assertEqual(self.RADAR_TX_QUEUE_MIN_SLOTS - 1, self.safety.can_slots_empty(self.safety.tx3_q))
+    self.assertEqual(-1, self.safety.safety_fwd_hook(0, self.NON_SCC_ADDR))
+
+  def test_radar_to_car_forwards_when_radar_queue_below_threshold(self):
+    self._fill_radar_tx_queue_to_empty_slots(self.RADAR_TX_QUEUE_MIN_SLOTS - 1)
+
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, self.NON_SCC_ADDR))
+
+  def test_bus_one_is_not_forwarded(self):
+    self.assertEqual(-1, self.safety.safety_fwd_hook(1, self.NON_SCC_ADDR))
+
+  def test_sunnypilot_scc_block_preserved(self):
+    self.safety.set_timer(1000)
+    self.assertEqual(-1, self.safety.safety_fwd_hook(0, 0x420))
+
+    for addr in self.SCC_ADDRS:
+      with self.subTest(addr=addr):
+        self.assertEqual(-1, self.safety.safety_fwd_hook(2, addr))
+
+  def test_sunnypilot_scc_block_expires(self):
+    self.safety.set_timer(1000)
+    self.safety.safety_fwd_hook(0, 0x420)
+
+    self.safety.set_timer(151001)
+
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, 0x420))
 
 
 if __name__ == "__main__":
