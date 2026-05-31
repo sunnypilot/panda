@@ -168,7 +168,10 @@ void send_escc_msg(const ESCC_Msg *msg, const int bus_number) {
   dat[6] = (msg->acc_obj_rel_spd_2);
   dat[7] = (msg->cr_vsm_deccmd_fca11);
 
-  CANPacket_t to_send;
+  CANPacket_t to_send = { 0 };
+  to_send.fd = 0U;
+  to_send.returned = 0U;
+  to_send.rejected = 0U;
   to_send.extended = CAN_ESCC_OUTPUT >= 0x800 ? 1 : 0;
   to_send.addr = CAN_ESCC_OUTPUT;
   to_send.bus = bus_number;
