@@ -177,13 +177,16 @@ bool can_check_checksum(CANPacket_t *packet) {
 }
 
 void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook) {
-  if (skip_tx_hook || safety_tx_hook(to_push) != 0) {
+  const bool tx_allowed = skip_tx_hook || safety_tx_hook(to_push);
+  const bool tx_consumed = !skip_tx_hook && safety_tx_consumed;
+
+  if (tx_allowed && !tx_consumed) {
     if (bus_number < PANDA_CAN_CNT) {
       // add CAN packet to send queue
       tx_buffer_overflow += can_push(can_queues[bus_number], to_push) ? 0U : 1U;
       process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
     }
-  } else {
+  } else if (!tx_allowed) {
     safety_tx_blocked += 1U;
     to_push->returned = 0U;
     to_push->rejected = 1U;

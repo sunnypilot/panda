@@ -39,10 +39,12 @@ extern can_ring *rx_q;
 extern can_ring *tx1_q;
 extern can_ring *tx2_q;
 extern can_ring *tx3_q;
+extern uint32_t safety_tx_blocked;
 
 bool can_pop(can_ring *q, CANPacket_t *elem);
 bool can_push(can_ring *q, CANPacket_t *elem);
 void can_set_checksum(CANPacket_t *packet);
+void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook);
 int comms_can_read(uint8_t *data, uint32_t max_len);
 void comms_can_write(uint8_t *data, uint32_t len);
 void comms_can_reset(void);
