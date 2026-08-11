@@ -47,6 +47,8 @@ static int get_health_pkt(void *dat) {
   health->controls_allowed_lateral_pkt = controls_allowed || controls_allowed_lateral;
   health->controls_allowed_longitudinal_pkt = controls_allowed;
 
+  health->temperature = dts_get_temperature();
+
   return sizeof(*health);
 }
 

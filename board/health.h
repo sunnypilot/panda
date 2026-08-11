@@ -29,6 +29,7 @@ struct __attribute__((packed)) health_t {
   uint16_t sound_output_level_pkt;
   uint8_t controls_allowed_lateral_pkt;
   uint8_t controls_allowed_longitudinal_pkt;
+  float temperature;
 };
 
 typedef struct __attribute__((packed)) {

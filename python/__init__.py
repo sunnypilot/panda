@@ -545,6 +545,7 @@ class Panda:
       "sound_output_level": a[25],
       "controls_allowed_lateral": a[26],
       "controls_allowed_longitudinal": a[27],
+      "temperature": a[28],
     }
 
   @ensure_health_packet_version
