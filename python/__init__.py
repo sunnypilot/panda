@@ -141,6 +141,14 @@ class Panda:
   HEALTH_STRUCT = _parse_c_struct(os.path.join(BASEDIR, "board/health.h"), "health_t")
   CAN_HEALTH_STRUCT = struct.Struct("<BIBBBBBBBBIIIIIIIHHBBBIIII")
 
+  HEALTH_FLAG_IGNITION_LINE = 1 << 0
+  HEALTH_FLAG_IGNITION_CAN = 1 << 1
+  HEALTH_FLAG_CONTROLS_ALLOWED = 1 << 2
+  HEALTH_FLAG_POWER_SAVE_ENABLED = 1 << 3
+  HEALTH_FLAG_HEARTBEAT_LOST = 1 << 4
+  HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID = 1 << 5
+  HEALTH_FLAG_SOM_RESET_TRIGGERED = 1 << 6
+
   H7_DEVICES = [HW_TYPE_RED_PANDA, HW_TYPE_TRES, HW_TYPE_CUATRO, HW_TYPE_BODY]
   SUPPORTED_DEVICES = H7_DEVICES
 
@@ -516,6 +524,7 @@ class Panda:
   def health(self):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd2, 0, 0, self.HEALTH_STRUCT.size)
     a = self.HEALTH_STRUCT.unpack(dat)
+    flags = a[8]
     return {
       "uptime": a[0],
       "voltage": a[1],
@@ -525,27 +534,27 @@ class Panda:
       "tx_buffer_overflow": a[5],
       "rx_buffer_overflow": a[6],
       "faults": a[7],
-      "ignition_line": a[8],
-      "ignition_can": a[9],
-      "controls_allowed": a[10],
-      "car_harness_status": a[11],
-      "safety_mode": a[12],
-      "safety_param": a[13],
-      "fault_status": a[14],
-      "power_save_enabled": a[15],
-      "heartbeat_lost": a[16],
-      "alternative_experience": a[17],
-      "interrupt_load": a[18],
-      "fan_power": a[19],
-      "safety_rx_checks_invalid": a[20],
-      "spi_error_count": a[21],
-      "sbu1_voltage_mV": a[22],
-      "sbu2_voltage_mV": a[23],
-      "som_reset_triggered": a[24],
-      "sound_output_level": a[25],
-      "controls_allowed_lateral": a[26] & 1,
-      "controls_allowed_longitudinal": (a[26] >> 1) & 1,
-      "temperature": a[27],
+      "ignition_line": bool(flags & self.HEALTH_FLAG_IGNITION_LINE),
+      "ignition_can": bool(flags & self.HEALTH_FLAG_IGNITION_CAN),
+      "controls_allowed": bool(flags & self.HEALTH_FLAG_CONTROLS_ALLOWED),
+      "car_harness_status": a[9],
+      "safety_mode": a[10],
+      "safety_param": a[11],
+      "fault_status": a[12],
+      "power_save_enabled": bool(flags & self.HEALTH_FLAG_POWER_SAVE_ENABLED),
+      "heartbeat_lost": bool(flags & self.HEALTH_FLAG_HEARTBEAT_LOST),
+      "alternative_experience": a[13],
+      "interrupt_load": a[14] / 255.0,
+      "fan_power": a[15],
+      "safety_rx_checks_invalid": bool(flags & self.HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID),
+      "spi_error_count": a[16],
+      "sbu1_voltage_mV": a[17],
+      "sbu2_voltage_mV": a[18],
+      "som_reset_triggered": bool(flags & self.HEALTH_FLAG_SOM_RESET_TRIGGERED),
+      "sound_output_level": a[19],
+      "temperature": a[20] - 40.0,
+      "controls_allowed_lateral": a[21] & 1,
+      "controls_allowed_longitudinal": (a[21] >> 1) & 1,
     }
 
   @ensure_health_packet_version
@@ -654,8 +663,8 @@ class Panda:
 
   # ******************* configuration *******************
 
-  def set_alternative_experience(self, alternative_experience, safety_param_sp=0):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xdf, int(alternative_experience), int(safety_param_sp), b'')
+  def set_alternative_experience(self, alternative_experience):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xdf, int(alternative_experience), 0, b'')
 
   def set_power_save(self, power_save_enabled=0):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xe7, int(power_save_enabled), 0, b'')
@@ -763,8 +772,8 @@ class Panda:
       ret += self._handle.bulkWrite(2, struct.pack("B", port_number) + ln[i:i + 0x20])
     return ret
 
-  def send_heartbeat(self, engaged=True, engaged_mads=True):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, engaged_mads, b'')
+  def send_heartbeat(self, engaged=True):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, 0, b'')
 
   # disable heartbeat checks for use outside of openpilot
   # sending a heartbeat will reenable the checks
