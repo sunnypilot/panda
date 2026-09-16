@@ -1,3 +1,8 @@
+#pragma once
+
+#include "board/config.h"
+#include "board/body/body.h"
+
 void comms_endpoint2_write(const uint8_t *data, uint32_t len) {
   UNUSED(data);
   UNUSED(len);
@@ -7,6 +12,12 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   unsigned int resp_len = 0;
 
   switch (req->request) {
+    // **** 0xb6: read debug logs
+    case 0xb6:
+      while ((resp_len < req->length) && (resp_len < USBPACKET_MAX_SIZE) && debug_get_char((char*)&resp[resp_len])) {
+        ++resp_len;
+      }
+      break;
     // **** 0xc1: get hardware type
     case 0xc1:
       resp[0] = hw_type;

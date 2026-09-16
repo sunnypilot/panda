@@ -1,3 +1,5 @@
+#pragma once
+
 #include "board/drivers/drivers.h"
 #include "opendbc/safety/ignition.h"
 
@@ -72,21 +74,7 @@ bool can_push(can_ring *q, const CANPacket_t *elem) {
   }
   EXIT_CRITICAL();
   if (!ret) {
-    #ifdef DEBUG
-      print("can_push to ");
-      if (q == &can_rx_q) {
-        print("can_rx_q");
-      } else if (q == &can_tx1_q) {
-        print("can_tx1_q");
-      } else if (q == &can_tx2_q) {
-        print("can_tx2_q");
-      } else if (q == &can_tx3_q) {
-        print("can_tx3_q");
-      } else {
-        print("unknown");
-      }
-      print(" failed!\n");
-    #endif
+    print("can_push failed!\n");
   }
   return ret;
 }
@@ -126,9 +114,9 @@ void can_clear(can_ring *q) {
 // Helpers
 // Panda:       Bus 0=CAN1   Bus 1=CAN2   Bus 2=CAN3
 bus_config_t bus_config[PANDA_CAN_CNT] = {
-  { .bus_lookup = 0U, .can_num_lookup = 0U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
-  { .bus_lookup = 1U, .can_num_lookup = 1U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
-  { .bus_lookup = 2U, .can_num_lookup = 2U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 0U, .can_num_lookup = 0U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 1U, .can_num_lookup = 1U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 2U, .can_num_lookup = 2U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
 };
 
 void can_init_all(void) {
@@ -146,12 +134,6 @@ void can_set_orientation(bool flipped) {
   bus_config[2].can_num_lookup = flipped ? 0U : 2U;
 }
 
-#ifdef PANDA_JUNGLE
-void can_set_forwarding(uint8_t from, uint8_t to) {
-  bus_config[from].forwarding_bus = to;
-}
-#endif
-
 bool can_tx_check_min_slots_free(uint32_t min) {
   return
     (can_slots_empty(&can_tx1_q) >= min) &&
@@ -159,7 +141,7 @@ bool can_tx_check_min_slots_free(uint32_t min) {
     (can_slots_empty(&can_tx3_q) >= min);
 }
 
-uint8_t calculate_checksum(const uint8_t *dat, uint32_t len) {
+static uint8_t calculate_checksum(const uint8_t *dat, uint32_t len) {
   uint8_t checksum = 0U;
   for (uint32_t i = 0U; i < len; i++) {
     checksum ^= dat[i];

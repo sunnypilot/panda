@@ -1,3 +1,5 @@
+#pragma once
+
 #include "board/drivers/drivers.h"
 
 FDCAN_GlobalTypeDef *cans[PANDA_CAN_CNT] = {FDCAN1, FDCAN2, FDCAN3};
@@ -149,7 +151,7 @@ void process_can(uint8_t can_number) {
 
 // FDFDCANx_IT0 IRQ Handler (RX and errors)
 // blink blue when we are receiving CAN messages
-void can_rx(uint8_t can_number) {
+static void can_rx(uint8_t can_number) {
   FDCAN_GlobalTypeDef *FDCANx = CANIF_FROM_CAN_NUM(can_number);
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
@@ -193,12 +195,9 @@ void can_rx(uint8_t can_number) {
     }
     can_set_checksum(&to_push);
 
-    // forwarding (panda only)
+    // forwarding
     int bus_fwd_num = safety_fwd_hook(bus_number, to_push.addr);
-    if (bus_fwd_num < 0) {
-      bus_fwd_num = bus_config[can_number].forwarding_bus;
-    }
-    if (bus_fwd_num != -1) {
+    if (bus_fwd_num >= 0) {
       CANPacket_t to_send;
 
       to_send.fd = to_push.fd;

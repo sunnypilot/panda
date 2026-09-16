@@ -1,3 +1,5 @@
+#pragma once
+
 // from the linker script
 #define APP_START_ADDRESS 0x8020000U
 
@@ -119,12 +121,12 @@ void comms_endpoint2_write(const uint8_t *data, uint32_t len) {
 
 void soft_flasher_start(void) {
   print("\n\n\n************************ FLASHER START ************************\n");
+  print("MCU UID: "); hexdump((const uint8_t *)UID_BASE, 12);
 
   enter_bootloader_mode = 0;
 
   flasher_peripherals_init();
 
-  gpio_usart2_init();
   gpio_usb_init();
   led_init();
 

@@ -1,3 +1,5 @@
+#pragma once
+
 // Early bringup
 #define ENTER_BOOTLOADER_MAGIC 0xdeadbeefU
 #define ENTER_SOFTLOADER_MAGIC 0xdeadc0deU
@@ -57,7 +59,6 @@ void early_initialization(void) {
 
   if (enter_bootloader_mode == ENTER_BOOTLOADER_MAGIC) {
     led_init();
-    current_board->init_bootloader();
     led_set(LED_GREEN, 1);
     jump_to_bootloader();
   }

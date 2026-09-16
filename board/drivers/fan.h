@@ -1,3 +1,5 @@
+#pragma once
+
 #include "board/drivers/drivers.h"
 
 struct fan_state_t fan_state;
@@ -24,13 +26,6 @@ void fan_tick(void) {
     uint16_t fan_rpm_fast = fan_state.tach_counter * (60U * FAN_TICK_FREQ / 4U);   // 4 interrupts per rotation
     fan_state.tach_counter = 0U;
     fan_state.rpm = (fan_rpm_fast + (3U * fan_state.rpm)) / 4U;
-
-    #ifdef DEBUG_FAN
-      puth(fan_state.target_rpm);
-      print(" "); puth(fan_rpm_fast);
-      print(" "); puth(fan_state.power);
-      print("\n");
-    #endif
 
     // Cooldown counter to prevent noise on tachometer line.
     if (fan_state.power > 0U) {

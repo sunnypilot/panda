@@ -15,8 +15,6 @@
 #include "board/body/dotstar.h"
 #include "bldc/bldc.h"
 
-extern int _app_start[0xc000];
-
 #include "board/body/main_comms.h"
 
 static volatile uint32_t tick_count = 0U;
@@ -24,12 +22,6 @@ static volatile uint32_t ignition_press_timestamp_us = 0U;
 static volatile bool ignition = false;
 static volatile bool plug_charging = false;
 
-void debug_ring_callback(uart_ring *ring) {
-  char rcv;
-  while (get_char(ring, &rcv)) {
-    (void)injectc(ring, rcv);
-  }
-}
 
 void __attribute__ ((noinline)) enable_fpu(void) {
   SCB->CPACR |= ((3UL << (10U * 2U)) | (3UL << (11U * 2U)));
@@ -95,6 +87,8 @@ int main(void) {
 
   current_board = &board_body;
   hw_type = HW_TYPE_BODY;
+
+  print("MCU UID: "); hexdump((const uint8_t *)UID_BASE, 12);
 
   current_board->init();
 
