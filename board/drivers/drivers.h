@@ -25,7 +25,6 @@ typedef struct {
 typedef struct {
   uint8_t bus_lookup;
   uint8_t can_num_lookup;
-  int8_t forwarding_bus;
   uint32_t can_speed;
   uint32_t can_data_speed;
   bool canfd_auto;
@@ -71,11 +70,7 @@ extern bus_config_t bus_config[PANDA_CAN_CNT];
 
 void can_init_all(void);
 void can_set_orientation(bool flipped);
-#ifdef PANDA_JUNGLE
-void can_set_forwarding(uint8_t from, uint8_t to);
-#endif
 bool can_tx_check_min_slots_free(uint32_t min);
-uint8_t calculate_checksum(const uint8_t *dat, uint32_t len);
 void can_set_checksum(CANPacket_t *packet);
 bool can_check_checksum(CANPacket_t *packet);
 void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook);
@@ -92,7 +87,6 @@ struct fan_state_t {
   uint16_t tach_counter;
   uint16_t rpm;
   uint8_t power;
-  float error_integral;
   uint8_t cooldown_counter;
 };
 extern struct fan_state_t fan_state;
@@ -118,7 +112,6 @@ extern FDCAN_GlobalTypeDef *cans[PANDA_CAN_CNT];
 void can_clear_send(FDCAN_GlobalTypeDef *FDCANx, uint8_t can_number);
 void update_can_health_pkt(uint8_t can_number, uint32_t ir_reg);
 
-void can_rx(uint8_t can_number);
 
 // ******************** harness ********************
 
@@ -157,7 +150,6 @@ void harness_init(void);
 // ******************** interrupts ********************
 
 typedef struct interrupt {
-  IRQn_Type irq_type;
   void (*handler)(void);
   uint32_t call_counter;
   uint32_t call_rate;
@@ -167,12 +159,10 @@ typedef struct interrupt {
 
 void interrupt_timer_init(void);
 uint32_t microsecond_timer_get(void);
-void unused_interrupt_handler(void);
 
 extern interrupt interrupts[NUM_INTERRUPTS];
 
 #define REGISTER_INTERRUPT(irq_num, func_ptr, call_rate_max, rate_fault) \
-  interrupts[irq_num].irq_type = (irq_num); \
   interrupts[irq_num].handler = (func_ptr);  \
   interrupts[irq_num].call_counter = 0U;   \
   interrupts[irq_num].call_rate = 0U;   \
@@ -234,48 +224,12 @@ void spi_init(void);
 void spi_rx_done(void);
 void spi_tx_done(bool reset);
 
-// ******************** uart ********************
-#ifdef STM32H7
-
-// ***************************** Definitions *****************************
-#define FIFO_SIZE_INT 0x400U
-
-typedef struct uart_ring {
-  volatile uint16_t w_ptr_tx;
-  volatile uint16_t r_ptr_tx;
-  uint8_t *elems_tx;
-  uint32_t tx_fifo_size;
-  volatile uint16_t w_ptr_rx;
-  volatile uint16_t r_ptr_rx;
-  uint8_t *elems_rx;
-  uint32_t rx_fifo_size;
-  USART_TypeDef *uart;
-  void (*callback)(struct uart_ring*);
-  bool overwrite;
-} uart_ring;
-
-// ***************************** Function prototypes *****************************
-void debug_ring_callback(uart_ring *ring);
-void uart_tx_ring(uart_ring *q);
-uart_ring *get_ring_by_number(int a);
-// ************************* Low-level buffer functions *************************
-bool get_char(uart_ring *q, char *elem);
-bool injectc(uart_ring *q, char elem);
-bool put_char(uart_ring *q, char elem);
-void clear_uart_buff(uart_ring *q);
-// ************************ High-level debug functions **********************
-void putch(const char a);
+// ******************** debug ********************
+bool debug_get_char(char *elem);
 void print(const char *a);
-void puthx(uint32_t i, uint8_t len);
 void puth(unsigned int i);
-#if defined(DEBUG_SPI) || defined(BOOTSTUB) || defined(DEBUG)
-static void puth4(unsigned int i);
-#endif
-#if defined(DEBUG_SPI) || defined(DEBUG_USB) || defined(DEBUG_COMMS)
 static void hexdump(const void *a, int l);
-#endif
-
-#endif // STM32H7
+static inline void puth4(unsigned int i);
 
 // ******************** usb ********************
 

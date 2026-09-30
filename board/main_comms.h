@@ -1,3 +1,5 @@
+#pragma once
+
 extern int _app_start[0xc000]; // Only first 3 sectors of size 0x4000 are used
 
 // Prototypes
@@ -53,31 +55,15 @@ static int get_health_pkt(void *dat) {
   return sizeof(*health);
 }
 
-// send on serial, first byte to select the ring
+// Endpoint 2 is only used by the bootstub for flashing.
 void comms_endpoint2_write(const uint8_t *data, uint32_t len) {
-  uart_ring *ur = get_ring_by_number(data[0]);
-  if ((len != 0U) && (ur != NULL)) {
-    if ((data[0] < 2U) || (data[0] >= 4U)) {
-      for (uint32_t i = 1; i < len; i++) {
-        while (!put_char(ur, data[i])) {
-          // wait
-        }
-      }
-    }
-  }
+  UNUSED(data);
+  UNUSED(len);
 }
 
 int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   unsigned int resp_len = 0;
-  uart_ring *ur = NULL;
   uint32_t time;
-
-#ifdef DEBUG_COMMS
-  print("raw control request: "); hexdump(req, sizeof(ControlPacket_t)); print("\n");
-  print("- request "); puth(req->request); print("\n");
-  print("- param1 "); puth(req->param1); print("\n");
-  print("- param2 "); puth(req->param2); print("\n");
-#endif
 
   switch (req->request) {
     // **** 0xa8: get microsecond timer
@@ -111,6 +97,12 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       stop_mode_requested = true;
       break;
     #endif
+    // **** 0xb6: read debug logs
+    case 0xb6:
+      while ((resp_len < req->length) && (resp_len < USBPACKET_MAX_SIZE) && debug_get_char((char*)&resp[resp_len])) {
+        ++resp_len;
+      }
+      break;
     // **** 0xc0: reset communications state
     case 0xc0:
       comms_can_reset();
@@ -254,20 +246,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         alternative_experience = req->param1;
         current_safety_param_sp = req->param2;
         mads_set_alternative_experience(&alternative_experience);
-      }
-      break;
-    // **** 0xe0: uart read
-    case 0xe0:
-      ur = get_ring_by_number(req->param1);
-      if (!ur) {
-        break;
-      }
-
-      // read
-      uint16_t req_length = MIN(req->length, USBPACKET_MAX_SIZE);
-      while ((resp_len < req_length) &&
-                         get_char(ur, (char*)&resp[resp_len])) {
-        ++resp_len;
       }
       break;
     // **** 0xe5: set CAN loopback (for testing)

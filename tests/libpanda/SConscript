@@ -1,6 +1,8 @@
 import opendbc
 
+import os
 env = Environment(
+  ENV=os.environ,
   CFLAGS=[
     '-nostdlib',
     '-fno-builtin',
