@@ -146,6 +146,8 @@ class Panda:
   HEALTH_FLAG_HEARTBEAT_LOST = 1 << 4
   HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID = 1 << 5
   HEALTH_FLAG_SOM_RESET_TRIGGERED = 1 << 6
+  HEALTH_FLAG_NMI_RESET = 1 << 7
+  HEALTH_FLAG_HARDFAULT_RESET = 1 << 8
 
   H7_DEVICES = [HW_TYPE_RED_PANDA, HW_TYPE_TRES, HW_TYPE_CUATRO, HW_TYPE_BODY]
   SUPPORTED_DEVICES = H7_DEVICES
@@ -249,10 +251,10 @@ class Panda:
     return isinstance(self._handle, PandaSpiHandle)
 
   @classmethod
-  def spi_connect(cls, serial, ignore_version=False):
+  def spi_connect(cls, serial):
     try:
       handle = PandaSpiHandle()
-      dat = handle.get_protocol_version()
+      dat = handle.get_info()
     except PandaSpiException:
       return None, None, None, False
 
@@ -261,15 +263,10 @@ class Panda:
     if pid not in (0xcc, 0xee):
       raise PandaProtocolMismatch(f"invalid bootstub status ({pid=}). reflash panda")
     bootstub = pid == 0xee
-    spi_version = dat[14]
 
     # did we get the right panda?
     if serial is not None and spi_serial != serial:
       return None, None, None, False
-
-    # ensure our protocol version matches the panda
-    if (not ignore_version) and spi_version != handle.PROTOCOL_VERSION:
-      raise PandaProtocolMismatch(f"panda protocol mismatch: expected {handle.PROTOCOL_VERSION}, got {spi_version}. reflash panda")
 
     # got a device and all good
     return None, handle, spi_serial, bootstub
@@ -348,7 +345,7 @@ class Panda:
 
   @classmethod
   def spi_list(cls):
-    _, _, serial, _ = cls.spi_connect(None, ignore_version=True)
+    _, _, serial, _ = cls.spi_connect(None)
     if serial is not None:
       return [serial, ]
     return []
@@ -549,6 +546,8 @@ class Panda:
       "sbu1_voltage_mV": a[17],
       "sbu2_voltage_mV": a[18],
       "som_reset_triggered": bool(flags & self.HEALTH_FLAG_SOM_RESET_TRIGGERED),
+      "nmi_reset": bool(flags & self.HEALTH_FLAG_NMI_RESET),
+      "hardfault_reset": bool(flags & self.HEALTH_FLAG_HARDFAULT_RESET),
       "sound_output_level": a[19],
       "temperature": a[20] - 40.0,
       "controls_allowed_lateral": a[21] & 1,
@@ -708,7 +707,7 @@ class Panda:
 
   @ensure_can_packet_version
   def can_send_many(self, arr, *, fd=False, timeout=CAN_SEND_TIMEOUT_MS):
-    snds = pack_can_buffer(arr, chunk=(not self.spi), fd=fd)
+    snds = pack_can_buffer(arr, chunk=True, fd=fd)
     for tx in snds:
       while len(tx) > 0:
         bs = self._handle.bulkWrite(3, tx, timeout=timeout)
