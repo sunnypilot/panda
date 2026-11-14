@@ -9,7 +9,7 @@ extern uint32_t _stack_guard;
 #define MPU_REGION_SAFETY 0U
 #define MPU_REGION_STACK_GUARD 1U
 
-// read only once FAULT_MPU is permanent, until then a write to controls_allowed or controls_allowed_lateral from outside the safety code is caught in mpu_safety_open()
+// read only once FAULT_MPU is permanent, until then a write to controls_allowed from outside the safety code is caught in mpu_safety_open()
 #define MPU_SAFETY_CLOSED (((PERMANENT_FAULTS & FAULT_MPU) != 0U) ? ARM_MPU_AP_PRO : ARM_MPU_AP_PRIV)
 
 static uint8_t mpu_safety_depth = 0U;

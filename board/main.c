@@ -125,7 +125,7 @@ static void tick_handler(void) {
 
     heartbeat_tick_counter += 1U;
 
-    // start the siren early on power loss while engaged, MADS lateral alone included
+    // start the siren early on power loss while engaged
     if ((safety.heartbeat_engaged || safety.heartbeat_engaged_mads) && (heartbeat_tick_counter > 2U) && (current_board->read_voltage_mV() < 6000U)) {
       siren_countdown = 3U;
     }

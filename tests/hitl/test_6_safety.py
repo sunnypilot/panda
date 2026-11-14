@@ -151,7 +151,6 @@ class TestSafety(PandaTestCase):
 
   @unittest.skipIf(FAULT_MPU_BIT in PERMANENT_FAULT_BITS, "a permanent FAULT_MPU makes any write a HardFault")
   def test_mpu_fault_lateral(self):
-    # sunnypilot: MADS lateral is guarded like controls_allowed
     p = self.p
     p.set_safety_mode(CarParams.SafetyModel.allOutput)
     assert not (p.health()['faults'] & (1 << FAULT_MPU_BIT))
@@ -163,16 +162,14 @@ class TestSafety(PandaTestCase):
     p.reset()
 
   def test_heartbeat_lost_exits_mads(self):
-    # sunnypilot: lateral allowed by MADS alone exits with the heartbeat, like controls_allowed
     p = self.p
     p.set_alternative_experience(ALTERNATIVE_EXPERIENCE.ENABLE_MADS)
     p.set_safety_mode(CarParams.SafetyModel.allOutput)
     p.set_can_loopback(True)
     p.send_heartbeat(engaged=False, engaged_mads=True)
-    # allOutput allows controls, the MADS update of the first RX frame engages lateral on that edge
+    # MADS engages lateral at the first RX frame
     p.can_send(0x1aa, b"message", 0)
 
-    # the heartbeat ends controls_allowed, MADS keeps lateral
     t = time.monotonic()
     while (h := p.health())['controls_allowed'] and (time.monotonic() - t) < HEARTBEAT_ENGAGED_MISMATCHES + 1:
       p.send_heartbeat(engaged=False, engaged_mads=True)
