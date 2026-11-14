@@ -2,6 +2,7 @@ import time
 import unittest
 
 from opendbc.car.structs import CarParams
+from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from panda import Panda
 from panda.tests.hitl.base import PandaTestCase, panda_test
 
@@ -160,6 +161,30 @@ class TestSafety(PandaTestCase):
       time.sleep(0.05)
     assert h['faults'] & (1 << FAULT_MPU_BIT)
     p.reset()
+
+  def test_heartbeat_lost_exits_mads(self):
+    # sunnypilot: lateral allowed by MADS alone exits with the heartbeat, like controls_allowed
+    p = self.p
+    p.set_alternative_experience(ALTERNATIVE_EXPERIENCE.ENABLE_MADS)
+    p.set_safety_mode(CarParams.SafetyModel.allOutput)
+    p.set_can_loopback(True)
+    p.send_heartbeat(engaged=False, engaged_mads=True)
+    # allOutput allows controls, the MADS update of the first RX frame engages lateral on that edge
+    p.can_send(0x1aa, b"message", 0)
+
+    # the heartbeat ends controls_allowed, MADS keeps lateral
+    t = time.monotonic()
+    while (h := p.health())['controls_allowed'] and (time.monotonic() - t) < HEARTBEAT_ENGAGED_MISMATCHES + 1:
+      p.send_heartbeat(engaged=False, engaged_mads=True)
+      time.sleep(0.1)
+    assert not h['controls_allowed']
+    assert h['controls_allowed_lateral']
+
+    t = time.monotonic()
+    while (h := p.health())['safety_mode'] != CarParams.SafetyModel.silent and (time.monotonic() - t) < 8:
+      time.sleep(0.1)
+    assert h['safety_mode'] == CarParams.SafetyModel.silent
+    assert not h['controls_allowed_lateral']
 
   def test_stack_overflow_resets_to_silent(self):
     p = self.p
