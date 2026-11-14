@@ -20,10 +20,10 @@ static int get_health_pkt(void *dat) {
   health->flags_pkt = 0U;
   health->flags_pkt |= harness_check_ignition() ? HEALTH_FLAG_IGNITION_LINE : 0U;
   health->flags_pkt |= ignition_can ? HEALTH_FLAG_IGNITION_CAN : 0U;
-  health->flags_pkt |= controls_allowed ? HEALTH_FLAG_CONTROLS_ALLOWED : 0U;
+  health->flags_pkt |= safety.controls_allowed ? HEALTH_FLAG_CONTROLS_ALLOWED : 0U;
   health->flags_pkt |= power_save_enabled ? HEALTH_FLAG_POWER_SAVE_ENABLED : 0U;
   health->flags_pkt |= heartbeat_lost ? HEALTH_FLAG_HEARTBEAT_LOST : 0U;
-  health->flags_pkt |= safety_rx_checks_invalid ? HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID : 0U;
+  health->flags_pkt |= safety.safety_rx_checks_invalid ? HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID : 0U;
   health->flags_pkt |= bootkick_reset_triggered ? HEALTH_FLAG_SOM_RESET_TRIGGERED : 0U;
   health->flags_pkt |= heartbeat_disabled ? HEALTH_FLAG_HEARTBEAT_DISABLED : 0U;
   health->flags_pkt |= reset_flags;
@@ -33,9 +33,9 @@ static int get_health_pkt(void *dat) {
   health->tx_buffer_overflow_pkt = tx_buffer_overflow;
   health->rx_buffer_overflow_pkt = rx_buffer_overflow;
   health->car_harness_status_pkt = harness.status;
-  health->safety_mode_pkt = (uint8_t)(current_safety_mode);
-  health->safety_param_pkt = current_safety_param;
-  health->alternative_experience_pkt = alternative_experience;
+  health->safety_mode_pkt = (uint8_t)(safety_setup.current_safety_mode);
+  health->safety_param_pkt = safety_setup.current_safety_param;
+  health->alternative_experience_pkt = safety_setup.alternative_experience;
 
   health->spi_error_count_pkt = spi_error_count;
 
@@ -55,7 +55,7 @@ static int get_health_pkt(void *dat) {
   float temperature_encoded = (CLAMP(dts_get_temperature(), -40.0f, 214.5f) + 40.0f) + 0.5f;
   health->temperature_pkt = (uint8_t)temperature_encoded;
 
-  health->controls_allowed_sp_pkt = (uint8_t)(((controls_allowed || controls_allowed_lateral) ? 1U : 0U) | (controls_allowed ? 2U : 0U));
+  health->controls_allowed_sp_pkt = (uint8_t)(((safety.controls_allowed || safety.controls_allowed_lateral) ? 1U : 0U) | (safety.controls_allowed ? 2U : 0U));
 
   return sizeof(*health);
 }
@@ -255,24 +255,29 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     // **** 0xdf: set alternative experience
     case 0xdf:
       // you can only set this if you are in a non car safety mode
-      if (!is_car_safety_mode(current_safety_mode)) {
-        alternative_experience = req->param1;
-        current_safety_param_sp = req->param2;
-        mads_set_alternative_experience(&alternative_experience);
+      if (!is_car_safety_mode(safety_setup.current_safety_mode)) {
+        mpu_safety_open();
+        safety_alternative_experience(req->param1);
+        safety_param_sp(req->param2);
+        safety_mads_alternative_experience();
+        mpu_safety_close();
       }
       break;
     // **** 0xe5: set CAN loopback (for testing)
+    #ifdef ALLOW_DEBUG
     case 0xe5:
       can_loopback = req->param1 > 0U;
       can_init_all();
       break;
+    #endif
     // **** 0xe6: set custom clock source period and pulse length
     case 0xe6:
       clock_source_set_timer_params(req->param1, req->param2);
       break;
     // **** 0xe7: set power save state
     case 0xe7:
-      set_power_save_state(req->param1 != 0U);
+      // power save only outside car safety modes
+      set_power_save_state((req->param1 != 0U) && !is_car_safety_mode(safety_setup.current_safety_mode));
       break;
     // **** 0xe8: set can-fd auto swithing mode
     case 0xe8:
@@ -297,7 +302,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xee: write controls_allowed outside safety, for testing
     case 0xee:
-      controls_allowed = !controls_allowed;
+      safety.controls_allowed = !safety.controls_allowed;
       break;
     // **** 0xf0: run the stack into its MPU guard, for testing
     case 0xf0:
@@ -328,6 +333,13 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       } else if (req->param1 == 6U) {
         // the interrupt timer handler runs without its flag
         NVIC_SetPendingIRQ(INTERRUPT_TIMER_IRQ);
+      } else if (req->param1 == 7U) {
+        // re-enable the tick disabled by 0
+        nvic_enable(TICK_TIMER_IRQ);
+      } else if ((req->param1 == 8U) && (req->param2 < NUM_INTERRUPTS)) {
+        // one more call than the limit allows
+        interrupts[req->param2].call_counter = interrupts[req->param2].max_call_rate;
+        NVIC_SetPendingIRQ((IRQn_Type)req->param2);
       } else {
       }
       break;
@@ -376,8 +388,10 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         heartbeat_tick_counter = 0U;
         heartbeat_lost = false;
         heartbeat_disabled = false;
-        heartbeat_engaged = (req->param1 == 1U);
-        heartbeat_engaged_mads = (req->param2 == 1U);
+        mpu_safety_open();
+        safety_heartbeat(req->param1 == 1U);
+        safety_heartbeat_mads(req->param2 == 1U);
+        mpu_safety_close();
         break;
       }
     // **** 0xf6: set siren enabled
@@ -386,7 +400,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xf8: disable heartbeat checks
     case 0xf8:
-      if (!is_car_safety_mode(current_safety_mode)) {
+      if (!is_car_safety_mode(safety_setup.current_safety_mode)) {
         heartbeat_disabled = true;
       }
       break;

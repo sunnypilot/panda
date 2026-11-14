@@ -127,6 +127,7 @@ class Panda:
   USB_PIDS = (0xddee, 0xddcc)
   REQUEST_IN = usb1.ENDPOINT_IN | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
   REQUEST_OUT = usb1.ENDPOINT_OUT | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
+  FLASH_FILL = b"\xff\xde"  # thumb udf, the trap instruction gcc emits for __builtin_trap()
 
   # from https://github.com/commaai/openpilot/blob/103b4df18cbc38f4129555ab8b15824d1a672bdf/cereal/log.capnp#L648
   HW_TYPE_UNKNOWN = b'\x00'
@@ -412,6 +413,10 @@ class Panda:
     assert last_sector >= 1, "Binary too small? No sector to erase."
     assert last_sector < 7, "Binary too large! Risk of overwriting provisioning chunk."
 
+    # UM2331 FLASH_SM_6, executing unused flash in the erased sectors faults
+    erased_size = sum(mcu_type.config.sector_sizes[1:last_sector + 1])
+    code = code + (Panda.FLASH_FILL * (erased_size // len(Panda.FLASH_FILL)))[len(code):]
+
     # unlock flash
     logger.info("flash: unlocking")
     handle.controlWrite(Panda.REQUEST_IN, 0xb1, 0, 0, b'')
@@ -678,8 +683,8 @@ class Panda:
   def inject_hardfault(self):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xeb, 0, 0, b'', expect_disconnect=True)
 
-  def inject_interrupt_fault(self, test):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xef, test, 0, b'')
+  def inject_interrupt_fault(self, test, param=0):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xef, test, param, b'')
 
   def inject_nmi(self):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xec, 0, 0, b'', expect_disconnect=True)
@@ -705,10 +710,6 @@ class Panda:
   def set_can_loopback(self, enable):
     # set can loopback mode for all buses
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xe5, int(enable), 0, b'')
-
-  def set_can_enable(self, bus_num, enable):
-    # sets the can transceiver enable pin
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf4, int(bus_num), int(enable), b'')
 
   def set_can_speed_kbps(self, bus, speed):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xde, bus, int(speed * 10), b'')
