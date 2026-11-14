@@ -148,6 +148,19 @@ class TestSafety(PandaTestCase):
       assert h['safety_mode'] == CarParams.SafetyModel.allOutput
     p.reset()
 
+  @unittest.skipIf(FAULT_MPU_BIT in PERMANENT_FAULT_BITS, "a permanent FAULT_MPU makes any write a HardFault")
+  def test_mpu_fault_lateral(self):
+    # sunnypilot: MADS lateral is guarded like controls_allowed
+    p = self.p
+    p.set_safety_mode(CarParams.SafetyModel.allOutput)
+    assert not (p.health()['faults'] & (1 << FAULT_MPU_BIT))
+    p.inject_mpu_fault(lateral=True)
+    t = time.monotonic()
+    while not ((h := p.health())['faults'] & (1 << FAULT_MPU_BIT)) and (time.monotonic() - t) < 2.5:
+      time.sleep(0.05)
+    assert h['faults'] & (1 << FAULT_MPU_BIT)
+    p.reset()
+
   def test_stack_overflow_resets_to_silent(self):
     p = self.p
     p.set_safety_mode(CarParams.SafetyModel.allOutput)

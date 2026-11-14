@@ -300,9 +300,13 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xec:
       SCB->ICSR = SCB_ICSR_NMIPENDSET_Msk;
       break;
-    // **** 0xee: write controls_allowed outside safety, for testing
+    // **** 0xee: write controls_allowed outside safety, for testing. 1: controls_allowed_lateral
     case 0xee:
-      safety.controls_allowed = !safety.controls_allowed;
+      if (req->param1 == 1U) {
+        safety.controls_allowed_lateral = !safety.controls_allowed_lateral;
+      } else {
+        safety.controls_allowed = !safety.controls_allowed;
+      }
       break;
     // **** 0xf0: run the stack into its MPU guard, for testing
     case 0xf0:
