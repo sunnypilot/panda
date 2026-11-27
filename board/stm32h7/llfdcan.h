@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BOARD_STM32H7_LLFDCAN_H
+#define BOARD_STM32H7_LLFDCAN_H
 
 #include "llfdcan_declarations.h"
 
@@ -10,7 +11,7 @@ static bool fdcan_request_init(FDCAN_GlobalTypeDef *FDCANx) {
   bool ret = true;
   // Exit from sleep mode
   FDCANx->CCCR &= ~(FDCAN_CCCR_CSR);
-  while ((FDCANx->CCCR & FDCAN_CCCR_CSA) == FDCAN_CCCR_CSA);
+  while ((FDCANx->CCCR & FDCAN_CCCR_CSA) == FDCAN_CCCR_CSA) {}
 
   // Request init
   uint32_t timeout_counter = 0U;
@@ -26,6 +27,16 @@ static bool fdcan_request_init(FDCAN_GlobalTypeDef *FDCANx) {
     }
   }
   return ret;
+}
+
+// CAN_SM_0
+static void fdcan_track_config(FDCAN_GlobalTypeDef *FDCANx) {
+  volatile uint32_t *regs[] = {&(FDCANx->NBTP), &(FDCANx->DBTP), &(FDCANx->IE), &(FDCANx->ILS), &(FDCANx->ILE), &(FDCANx->GFC),
+                               &(FDCANx->SIDFC), &(FDCANx->XIDFC), &(FDCANx->RXF0C), &(FDCANx->RXESC), &(FDCANx->TXBC), &(FDCANx->TXESC)};
+  for (uint8_t i = 0U; i < (sizeof(regs) / sizeof(regs[0])); i++) {
+    register_set(regs[i], *regs[i], 0xFFFFFFFFU);
+  }
+  register_set(&(FDCANx->CCCR), FDCANx->CCCR, FDCAN_CCCR_MON | FDCAN_CCCR_DAR | FDCAN_CCCR_TEST | FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE | FDCAN_CCCR_NISO);
 }
 
 static bool fdcan_exit_init(FDCAN_GlobalTypeDef *FDCANx) {
@@ -108,6 +119,7 @@ bool llcan_set_speed(FDCAN_GlobalTypeDef *FDCANx, uint32_t speed, uint32_t data_
     if (silent) {
       FDCANx->CCCR |= FDCAN_CCCR_MON;
     }
+    fdcan_track_config(FDCANx);
     ret = fdcan_exit_init(FDCANx);
     if (!ret) {
       print(CAN_NAME_FROM_CANIF(FDCANx)); print(" set_speed timed out! (2)\n");
@@ -120,29 +132,31 @@ bool llcan_set_speed(FDCAN_GlobalTypeDef *FDCANx, uint32_t speed, uint32_t data_
 
 void llcan_irq_disable(const FDCAN_GlobalTypeDef *FDCANx) {
   if (FDCANx == FDCAN1) {
-    NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
-    NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
+    nvic_disable(FDCAN1_IT0_IRQn);
+    nvic_disable(FDCAN1_IT1_IRQn);
   } else if (FDCANx == FDCAN2) {
-    NVIC_DisableIRQ(FDCAN2_IT0_IRQn);
-    NVIC_DisableIRQ(FDCAN2_IT1_IRQn);
+    nvic_disable(FDCAN2_IT0_IRQn);
+    nvic_disable(FDCAN2_IT1_IRQn);
   } else if (FDCANx == FDCAN3) {
-    NVIC_DisableIRQ(FDCAN3_IT0_IRQn);
-    NVIC_DisableIRQ(FDCAN3_IT1_IRQn);
+    nvic_disable(FDCAN3_IT0_IRQn);
+    nvic_disable(FDCAN3_IT1_IRQn);
   } else {
+    // not an FDCAN instance
   }
 }
 
 void llcan_irq_enable(const FDCAN_GlobalTypeDef *FDCANx) {
   if (FDCANx == FDCAN1) {
-    NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
-    NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
+    nvic_enable(FDCAN1_IT0_IRQn);
+    nvic_enable(FDCAN1_IT1_IRQn);
   } else if (FDCANx == FDCAN2) {
-    NVIC_EnableIRQ(FDCAN2_IT0_IRQn);
-    NVIC_EnableIRQ(FDCAN2_IT1_IRQn);
+    nvic_enable(FDCAN2_IT0_IRQn);
+    nvic_enable(FDCAN2_IT1_IRQn);
   } else if (FDCANx == FDCAN3) {
-    NVIC_EnableIRQ(FDCAN3_IT0_IRQn);
-    NVIC_EnableIRQ(FDCAN3_IT1_IRQn);
+    nvic_enable(FDCAN3_IT0_IRQn);
+    nvic_enable(FDCAN3_IT1_IRQn);
   } else {
+    // not an FDCAN instance
   }
 }
 
@@ -203,10 +217,11 @@ bool llcan_init(FDCAN_GlobalTypeDef *FDCANx) {
     FDCANx->IE |= FDCAN_IE_RF0NE; // Rx FIFO 0 new message
     FDCANx->IE |= FDCAN_IE_PEDE | FDCAN_IE_PEAE | FDCAN_IE_BOE | FDCAN_IE_EPE | FDCAN_IE_RF0LE;
 
-    // Messages for INT1 (Only TFE works??)
+    // Messages for INT1 (Only TFE works?)
     FDCANx->ILS |= FDCAN_ILS_TFEL;
     FDCANx->IE |= FDCAN_IE_TFEE; // Tx FIFO empty
 
+    fdcan_track_config(FDCANx);
     ret = fdcan_exit_init(FDCANx);
     if(!ret) {
       print(CAN_NAME_FROM_CANIF(FDCANx)); print(" llcan_init timed out (2)!\n");
@@ -227,3 +242,5 @@ void llcan_clear_send(FDCAN_GlobalTypeDef *FDCANx) {
   bool ret = llcan_init(FDCANx);
   UNUSED(ret);
 }
+
+#endif  // BOARD_STM32H7_LLFDCAN_H

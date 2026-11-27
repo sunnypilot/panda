@@ -6,7 +6,6 @@
 #include "board/drivers/pwm.h"
 #include "board/drivers/usb.h"
 #include "board/early_init.h"
-#include "board/obj/gitversion.h"
 #include "board/body/can.h"
 #include "opendbc/safety/safety.h"
 #include "board/drivers/can_common.h"
@@ -16,6 +15,10 @@
 #include "bldc/bldc.h"
 
 #include "board/body/main_comms.h"
+
+// body has no safety modes
+void fault_safe_state(void) {
+}
 
 static volatile uint32_t tick_count = 0U;
 static volatile uint32_t ignition_press_timestamp_us = 0U;
@@ -27,7 +30,7 @@ void __attribute__ ((noinline)) enable_fpu(void) {
   SCB->CPACR |= ((3UL << (10U * 2U)) | (3UL << (11U * 2U)));
 }
 
-void __initialize_hardware_early(void) {
+void initialize_hardware_early(void) {
   enable_fpu();
   early_initialization();
 }
@@ -94,11 +97,11 @@ int main(void) {
 
   REGISTER_INTERRUPT(EXTI15_10_IRQn, exti15_10_handler, 10000U, FAULT_INTERRUPT_RATE_EXTI);
   NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
-  NVIC_EnableIRQ(EXTI15_10_IRQn);
+  nvic_enable(EXTI15_10_IRQn);
 
   REGISTER_INTERRUPT(TIM8_UP_TIM13_IRQn, bldc_tim8_handler, 100000U, FAULT_INTERRUPT_RATE_TICK);
   NVIC_ClearPendingIRQ(TIM8_UP_TIM13_IRQn);
-  NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
+  nvic_enable(TIM8_UP_TIM13_IRQn);
 
   REGISTER_INTERRUPT(TICK_TIMER_IRQ, tick_handler, 10U, FAULT_INTERRUPT_RATE_TICK);
 

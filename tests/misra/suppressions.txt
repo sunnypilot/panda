@@ -20,3 +20,7 @@ unusedFunction:*/interrupt_handlers*.h
 # fixing the violations and all are intended to be removed soon after
 misra-c2012-2.5   # unused macros. a few legit, rest aren't common between F4/H7 builds. should we do this in the unusedFunction pass?
 misra-c2012-12.2:*/gpio.h # Suppress 12.2 for any file named gpio.h
+
+# FIXME-SP: opendbc 34ac23f58 added ignition_can_reset for its test library only, so panda flags 8.7.
+# commaai/panda master pins an opendbc older than that commit. Remove on the upstream sync where it pins one that has it.
+misra-c2012-8.7:*/ignition.h
