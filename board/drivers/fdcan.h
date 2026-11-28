@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BOARD_DRIVERS_FDCAN_H
+#define BOARD_DRIVERS_FDCAN_H
 
 #include "board/drivers/drivers.h"
 
@@ -196,7 +197,10 @@ static void can_rx(uint8_t can_number) {
     can_set_checksum(&to_push);
 
     // forwarding
+    mpu_safety_open();
     int bus_fwd_num = safety_fwd_hook(bus_number, to_push.addr);
+    safety_rx_invalid += safety_rx_hook(&to_push) ? 0U : 1U;
+    mpu_safety_close();
     if (bus_fwd_num >= 0) {
       CANPacket_t to_send;
 
@@ -218,7 +222,6 @@ static void can_rx(uint8_t can_number) {
     body_can_rx(&to_push);
     #endif
 
-    safety_rx_invalid += safety_rx_hook(&to_push) ? 0U : 1U;
     ignition_can_hook(&to_push);
 
     led_set(LED_BLUE, true);
@@ -270,3 +273,5 @@ bool can_init(uint8_t can_number) {
   }
   return ret;
 }
+
+#endif  // BOARD_DRIVERS_FDCAN_H

@@ -55,9 +55,23 @@ ENTRY(Reset_Handler)
 /* Highest address of the user mode stack */
 enter_bootloader_mode = 0x38001FFC;
 fault_cookie = 0x38003FFC;
+self_test_cookie = 0x38003FF8;
+fault_cfsr = 0x38003FF4;
+fault_addr = 0x38003FF0;
+fault_pc = 0x38003FEC;
 
 _estack = 0x20020000;    /* end of RAM */
-_app_start = 0x08020000; /* Reserve Sector 0(128K) for bootloader */
+dtcmram_start = ORIGIN(DTCMRAM);
+dtcmram_end = ORIGIN(DTCMRAM) + LENGTH(DTCMRAM);
+sram12_start = ORIGIN(SRAM12);
+sram12_end = ORIGIN(SRAM12) + LENGTH(SRAM12);
+sram4_start = ORIGIN(SRAM4);
+sram4_end = ORIGIN(SRAM4) + LENGTH(SRAM4);
+axisram_start = ORIGIN(AXISRAM);
+axisram_end = ORIGIN(AXISRAM) + LENGTH(AXISRAM);
+itcmram_start = ORIGIN(ITCMRAM);
+itcmram_end = ORIGIN(ITCMRAM) + LENGTH(ITCMRAM);
+app_start = 0x08020000; /* Reserve Sector 0(128K) for bootloader */
 
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0x200;      /* required amount of heap  */
@@ -152,6 +166,17 @@ SECTIONS
   {
     . = ALIGN(4);
     _sdata = .;        /* create a global symbol at data start */
+
+    /* safety state, one MPU region, see board/stm32h7/llmpu.h */
+    . = ALIGN(2048);
+    safety_start = .;
+    *(.data.safety_a .bss.safety_a)
+    *(.data.safety_b .bss.safety_b)
+    *(.data.current_copy .bss.current_copy)
+    *(.data.safety_redundancy_fault .bss.safety_redundancy_fault)
+    ASSERT((. - safety_start) <= 2048, "safety state doesn't fit its MPU region");
+    . = ALIGN(2048);
+
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
 
@@ -182,10 +207,19 @@ SECTIONS
     . = ALIGN(8);
     PROVIDE ( end = . );
     PROVIDE ( _end = . );
+    . = ALIGN(512);
+    stack_guard = .;
+    . = . + 512;
+    stack_guard_end = .;
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >DTCMRAM
+
+  ASSERT(DEFINED(safety_a) ? (safety_a >= safety_start && safety_a < (safety_start + 2048)) : !DEFINED(safety_tx_hook), "safety_a not in the MPU region")
+  ASSERT(DEFINED(safety_b) ? (safety_b >= safety_start && safety_b < (safety_start + 2048)) : !DEFINED(safety_tx_hook), "safety_b not in the MPU region")
+  ASSERT(DEFINED(current_copy) ? (current_copy >= safety_start && current_copy < (safety_start + 2048)) : !DEFINED(safety_tx_hook), "current_copy not in the MPU region")
+  ASSERT(DEFINED(safety_redundancy_fault) ? (safety_redundancy_fault >= safety_start && safety_redundancy_fault < (safety_start + 2048)) : !DEFINED(safety_tx_hook), "safety_redundancy_fault not in the MPU region")
 
   .itcmram (NOLOAD) :
   {

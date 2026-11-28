@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BOARD_DRIVERS_DRIVERS_H
+#define BOARD_DRIVERS_DRIVERS_H
 
 #include "board/can.h"
 #include "board/health.h"
@@ -39,10 +40,6 @@ extern uint32_t tx_buffer_overflow;
 extern uint32_t rx_buffer_overflow;
 
 extern can_health_t can_health[PANDA_CAN_CNT];
-
-// Ignition detected from CAN messages
-extern bool ignition_can;
-extern uint32_t ignition_can_cnt;
 
 extern bool can_silent;
 extern bool can_loopback;
@@ -154,9 +151,16 @@ typedef struct interrupt {
   uint32_t call_counter;
   uint32_t call_rate;
   uint32_t max_call_rate;   // Call rate is defined as the amount of calls each second
+  uint32_t min_call_rate;
   uint32_t call_rate_fault;
 } interrupt;
 
+typedef struct {
+  uint32_t last_ts;
+  uint32_t prev_ts;
+  uint32_t mismatches;
+} timer_check_t;
+bool timer_check(timer_check_t *check, uint32_t *dt_out);
 void interrupt_timer_init(void);
 uint32_t microsecond_timer_get(void);
 
@@ -175,13 +179,16 @@ void handle_interrupt(IRQn_Type irq_type);
 // Every second
 void interrupt_timer_handler(void);
 void init_interrupts(bool check_rate_limit);
+void nvic_enable(IRQn_Type irq);
+void nvic_disable(IRQn_Type irq);
+void nvic_check(void);
 
 #endif // STM32H7
 
 // ******************** registers ********************
 
 // 10 bit hash with 23 as a prime
-#define REGISTER_MAP_SIZE 0x3FFU
+#define REGISTER_MAP_SIZE 0x400U
 #define HASHING_PRIME 23U
 
 // Do not put bits in the check mask that get changed by the hardware
@@ -195,6 +202,11 @@ void register_clear_bits(volatile uint32_t *addr, uint32_t val);
 // To be called periodically
 void check_registers(void);
 void init_registers(void);
+
+// ******************** mpu ********************
+
+void mpu_safety_open(void);
+void mpu_safety_close(void);
 
 // ******************** simple_watchdog ********************
 
@@ -234,3 +246,5 @@ static inline void puth4(unsigned int i);
 void usb_init(void);
 void refresh_can_tx_slots_available(void);
 void can_tx_comms_resume_usb(void);
+
+#endif  // BOARD_DRIVERS_DRIVERS_H

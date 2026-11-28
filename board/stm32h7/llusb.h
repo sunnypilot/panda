@@ -1,17 +1,18 @@
-#pragma once
+#ifndef BOARD_STM32H7_LLUSB_H
+#define BOARD_STM32H7_LLUSB_H
 
 #include "llusb_declarations.h"
 
 USB_OTG_GlobalTypeDef *USBx = USB_OTG_HS;
 
 static void OTG_HS_IRQ_Handler(void) {
-  NVIC_DisableIRQ(OTG_HS_IRQn);
+  nvic_disable(OTG_HS_IRQn);
   usb_irqhandler();
-  NVIC_EnableIRQ(OTG_HS_IRQn);
+  nvic_enable(OTG_HS_IRQn);
 }
 
 void usb_init(void) {
-  REGISTER_INTERRUPT(OTG_HS_IRQn, OTG_HS_IRQ_Handler, 1500000U, FAULT_INTERRUPT_RATE_USB) // TODO: Find out a better rate limit for USB. Now it's the 1.5MB/s rate
+  REGISTER_INTERRUPT(OTG_HS_IRQn, OTG_HS_IRQ_Handler, 100000U, FAULT_INTERRUPT_RATE_USB) // about 2x the max measured host load
 
   // Disable global interrupt
   USBx->GAHBCFG &= ~(USB_OTG_GAHBCFG_GINT);
@@ -22,10 +23,10 @@ void usb_init(void) {
   USBx->GUSBCFG |= USB_OTG_GUSBCFG_FDMOD;
   delay(250000); // Wait for about 25ms (explicitly stated in H7 ref manual)
   // Wait for AHB master IDLE state.
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0U);
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0U) {}
   // Core Soft Reset
   USBx->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST) {}
   // Activate the USB Transceiver
   USBx->GCCFG |= USB_OTG_GCCFG_PWRDWN;
 
@@ -48,10 +49,10 @@ void usb_init(void) {
 
   // Flush FIFOs
   USBx->GRSTCTL = (USB_OTG_GRSTCTL_TXFFLSH | (0x10U << 6));
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH) {}
 
   USBx->GRSTCTL = USB_OTG_GRSTCTL_RXFFLSH;
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH);
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH) {}
 
   // Clear all pending Device Interrupts
   USBx_DEVICE->DIEPMSK = 0U;
@@ -77,5 +78,7 @@ void usb_init(void) {
   USBx_DEVICE->DCTL &= ~(USB_OTG_DCTL_SDIS);
 
   // enable the IRQ
-  NVIC_EnableIRQ(OTG_HS_IRQn);
+  nvic_enable(OTG_HS_IRQn);
 }
+
+#endif  // BOARD_STM32H7_LLUSB_H

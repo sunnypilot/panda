@@ -1,102 +1,105 @@
 import os
 import time
 import random
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 
 from opendbc.car.structs import CarParams
+from panda import Panda
 from panda.tests.hitl.base import PandaTestCase, panda_test
-from panda.tests.hitl.helpers import time_many_sends, get_random_can_messages, clear_can_buffers
+from panda.tests.hitl.helpers import get_random_can_messages
 
 class TestCanLoopback(PandaTestCase):
-  @panda_test(needs_jungle=True)
-  @panda_test(timeout=35)
-  def test_send_recv(self):
-    p = self.p
-    panda_jungle = self.panda_jungle
-    def test(p_send, p_recv):
-      for bus in (0, 1, 2):
-        for speed in (10, 20, 50, 100, 125, 250, 500, 1000):
-          clear_can_buffers(p_send, speed)
-          clear_can_buffers(p_recv, speed)
+  def _exchange(self, sender, receiver, messages):
+    start = time.monotonic()
+    sender.can_send_many(messages)
+    received = []
+    while len(received) < len(messages) and time.monotonic() - start < 1:
+      received.extend(receiver.can_recv())
+    elapsed = time.monotonic() - start
+    assert sorted(received) == sorted(messages), (len(messages), len(received), received[:8])
+    if sender is self.p:
+      assert sorted(self.p.can_recv()) == sorted((addr, dat, bus | 0x80) for addr, dat, bus in messages)
+    return elapsed
 
-          comp_kbps = time_many_sends(p_send, bus, p_recv, two_pandas=True)
+  @panda_test(timeout=120)
+  def test_physical_bulk(self):
+    self.p.set_safety_mode(CarParams.SafetyModel.allOutput)
+    for bus in range(3):
+      self.p.set_can_speed_kbps(bus, 1000)
+      self.up.set_can_speed_kbps(bus, 1000)
+    for sender, receiver in ((self.p, self.up), (self.up, self.p)):
+      # 512 frames per isolated bus wrap each 416-entry TX ring. Another 3072
+      # mixed frames bring each direction past the 4096-entry RX ring boundary.
+      # Queue-capacity stress is covered by test_bulk_write; here bursts stay
+      # within the UP's receive capacity (eight frames per bus).
+      sequence = 0
+      for buses, count in (((0,), 512), ((1,), 512), ((2,), 512), ((0, 1, 2), 3072)):
+        with self.subTest(direction="panda->UP" if sender is self.p else "UP->panda", buses=buses):
+          for _ in range(count // (8 * len(buses))):
+            messages = []
+            for j in range(8 * len(buses)):
+              i = sequence + j
+              address = (0x10000 + i) if i % 2 else i % 0x800
+              data = (i.to_bytes(4, "little") + b"\x00\xff\x55\xaa")[:(i // 2) % 9]
+              messages.append((address, data, buses[j % len(buses)]))
+            self._exchange(sender, receiver, messages)
+            sequence += len(messages)
+      assert not receiver.can_recv()
 
-          saturation_pct = (comp_kbps / speed) * 100.0
-          assert 80 < saturation_pct < 100
-
-          print(f"two pandas bus {bus}, 100 messages at speed {speed:4d}, comp speed is {comp_kbps:7.2f}, {saturation_pct:6.2f}%")
-
-    # Run tests in both directions
+  @panda_test(timeout=180)
+  def test_bitrates_and_latency(self):
+    p, up = self.p, self.up
     p.set_safety_mode(CarParams.SafetyModel.allOutput)
-    test(p, panda_jungle)
-    test(panda_jungle, p)
+    flipped = p.health()["car_harness_status"] == Panda.HARNESS_STATUS_FLIPPED
+    # The UP cannot clock 10 or 20 kbps; internal loopback covers those rates.
+    for speed in (50, 100, 125, 250, 500, 1000):
+      for bus in range(3):
+        p.set_can_speed_kbps(bus, speed)
+        up.set_can_speed_kbps(bus, speed)
+      time.sleep(0.1)
+      # Measure latency before saturating the bus; every exchange checks its receipts.
+      for sender, receiver in ((self.p, self.up), (self.up, self.p)):
+        for bus in range(3):
+          latencies = [self._exchange(sender, receiver, [(0x123, i.to_bytes(4, "little") + b"test", bus)]) for i in range(20)]
+          # End-to-end bounds include the UP RPC and CAN serialization time.
+          wire_time = 135 / (speed * 1000)  # worst-case stuffed 8-byte standard frame
+          assert max(latencies) < wire_time + 0.05, (speed, bus, max(latencies))
+          assert sum(latencies) / len(latencies) < wire_time + 0.01, (speed, bus, latencies)
 
+      for bus in range(3):
+        can_number = 2 - bus if flipped else bus
+        message = (0x123, b"\xaa" * 8, bus)
+        target = p.can_health(can_number)["total_tx_cnt"] + 600
+        p.can_send_many([message] * 600, timeout=5000)
+        # Time queued transmissions, excluding host packing and reading back frames.
+        start = time.monotonic()
+        remaining = target - p.can_health(can_number)["total_tx_cnt"]
+        wire_time = remaining * 111 / (speed * 1000)  # 8-byte standard frames, excluding stuffing
+        time.sleep(0.75 * wire_time)
+        while p.can_health(can_number)["total_tx_cnt"] < target and time.monotonic() - start < 5:
+          time.sleep(0.001)
+        saturation = wire_time / (time.monotonic() - start)
+        assert 0.8 < saturation < 1, (speed, bus, saturation)
+        assert p.can_recv() == [(message[0], message[1], bus | 0x80)] * 600
+        # The UP can drop frames under saturation; validate what it did receive.
+        received = up.can_recv()
+        assert received and all(m == message for m in received), (speed, bus, received)
+        up.can_send_many([message])
+        received = []
+        deadline = time.monotonic() + 1
+        while not received and time.monotonic() < deadline:
+          received.extend(p.can_recv())
+          time.sleep(0.001)
+        assert received == [message], (speed, bus, received)
+      # Never discard saturation traffic before the next speed's latency samples.
+      assert not p.can_recv()
+      assert not up.can_recv()
 
-  @panda_test(needs_jungle=True)
-  @panda_test(timeout=30)
-  def test_latency(self):
-    p = self.p
-    panda_jungle = self.panda_jungle
-    def test(p_send, p_recv):
-      for bus in (0, 1, 2):
-        for speed in (10, 20, 50, 100, 125, 250, 500, 1000):
-          clear_can_buffers(p_send, speed)
-          clear_can_buffers(p_recv, speed)
-
-          latencies = []
-          comp_kbps_list = []
-          saturation_pcts = []
-
-          num_messages = 100
-
-          for _ in range(num_messages):
-            st = time.monotonic()
-            p_send.can_send(0x1ab, b"message", bus)
-            r = []
-            while len(r) < 1 and (time.monotonic() - st) < 5:
-              r = p_recv.can_recv()
-            et = time.monotonic()
-            r_echo = []
-            while len(r_echo) < 1 and (time.monotonic() - st) < 10:
-              r_echo = p_send.can_recv()
-
-            if len(r) == 0 or len(r_echo) == 0:
-              print(f"r: {r}, r_echo: {r_echo}")
-
-            assert len(r) == 1
-            assert len(r_echo) == 1
-
-            et = (et - st) * 1000.0
-            comp_kbps = (1 + 11 + 1 + 1 + 1 + 4 + 8 * 8 + 15 + 1 + 1 + 1 + 7) / et
-            latency = et - ((1 + 11 + 1 + 1 + 1 + 4 + 8 * 8 + 15 + 1 + 1 + 1 + 7) / speed)
-
-            assert latency < 5.0
-
-            saturation_pct = (comp_kbps / speed) * 100.0
-            latencies.append(latency)
-            comp_kbps_list.append(comp_kbps)
-            saturation_pcts.append(saturation_pct)
-
-          average_latency = sum(latencies) / num_messages
-          assert average_latency < 1.0
-          average_comp_kbps = sum(comp_kbps_list) / num_messages
-          average_saturation_pct = sum(saturation_pcts) / num_messages
-
-          print("two pandas bus {}, {} message average at speed {:4d}, latency is {:5.3f}ms, comp speed is {:7.2f}, percent {:6.2f}"
-                .format(bus, num_messages, speed, average_latency, average_comp_kbps, average_saturation_pct))
-
-    # Run tests in both directions
-    p.set_safety_mode(CarParams.SafetyModel.allOutput)
-    test(p, panda_jungle)
-    test(panda_jungle, p)
-
-
-  @panda_test(needs_jungle=True)
   @panda_test(expect_can_error=True)
   def test_gen2_loopback(self):
     p = self.p
-    panda_jungle = self.panda_jungle
+    up = self.up
     def test(p_send, p_recv, address=None):
       for bus in range(4):
         obd = False
@@ -104,19 +107,21 @@ class TestCanLoopback(PandaTestCase):
           obd = True
           bus = 1
 
-        # Clear buses
-        clear_can_buffers(p_send)
-        clear_can_buffers(p_recv)
+        # Previous exchanges consumed their frames and receipts; reject leftovers.
+        assert not p_send.can_recv()
+        assert not p_recv.can_recv()
 
         # Send a random string
         addr = address if address else random.randint(1, 2000)
         string = b"test" + os.urandom(4)
-        p_send.set_obd(obd)
-        p_recv.set_obd(obd)
+        p.set_obd(obd)
+        # The UP exposes the OBD pair as bus 3 instead of switching bus 1.
+        send_bus = 3 if obd and p_send is up else bus
+        recv_bus = 3 if obd and p_recv is up else bus
+        # set_obd synchronously switches GPIOs in the control request handler.
+        # Keep the original receive window to detect late duplicates as well.
+        p_send.can_send(addr, string, send_bus)
         time.sleep(0.2)
-        p_send.can_send(addr, string, bus)
-        time.sleep(0.2)
-
         content = p_recv.can_recv()
 
         # Check amount of messages
@@ -126,29 +131,33 @@ class TestCanLoopback(PandaTestCase):
         assert content[0][0] == addr and content[0][1] == string
 
         # Check bus
-        assert content[0][2] == bus
+        assert content[0][2] == recv_bus
+
+        if p_send is p:
+          receipts = p.can_recv()
+          assert receipts == [(addr, string, send_bus | 0x80)], receipts
+        assert not p_send.can_recv()
+        assert not p_recv.can_recv()
 
         print("Bus:", bus, "address:", addr, "OBD:", obd, "OK")
 
     # Run tests in both directions
     p.set_safety_mode(CarParams.SafetyModel.allOutput)
-    test(p, panda_jungle)
-    test(panda_jungle, p)
+    test(p, up)
+    test(up, p)
 
     # Test extended frame address with ELM327 mode
     p.set_safety_mode(CarParams.SafetyModel.elm327)
-    test(p, panda_jungle, 0x18DB33F1)
-    test(panda_jungle, p, 0x18DB33F1)
+    test(p, up, 0x18DB33F1)
+    test(up, p, 0x18DB33F1)
 
-    # TODO: why it's not being reset by fixtures reinit?
     p.set_obd(False)
-    panda_jungle.set_obd(False)
 
-  @panda_test(needs_jungle=True)
   def test_bulk_write(self):
     p = self.p
-    panda_jungle = self.panda_jungle
-    # The TX buffers on pandas is 0x100 in length.
+    p.set_safety_mode(CarParams.SafetyModel.allOutput)
+    p.set_can_loopback(True)
+    # Send far more than the panda's TX buffers can hold.
     NUM_MESSAGES_PER_BUS = 10000
 
     def flood_tx(panda):
@@ -160,27 +169,48 @@ class TestCanLoopback(PandaTestCase):
       # end with many messages on multiple buses
       packet += [[0xaa, msg, 0], [0xaa, msg, 1], [0xaa, msg, 2]] * NUM_MESSAGES_PER_BUS
 
-      # Disable timeout
-      panda.set_safety_mode(CarParams.SafetyModel.allOutput)
-      panda.can_send_many(packet, timeout=0)
+      panda.can_send_many(packet, timeout=10000)
       print(f"Done sending {4 * NUM_MESSAGES_PER_BUS} messages!", time.monotonic())
       print(panda.health())
 
-    # Start transmisson
-    threading.Thread(target=flood_tx, args=(p,)).start()
+    # Drain looped-back frames and receipts while the writer fills the TX queues.
+    with ThreadPoolExecutor(max_workers=1) as executor:
+      sender = executor.submit(flood_tx, p)
+      received = []
+      deadline = time.monotonic() + 30
+      while len(received) < 8 * NUM_MESSAGES_PER_BUS and time.monotonic() < deadline:
+        received.extend(p.can_recv())
+      sender.result()
 
-    # Receive as much as we can in a few second time period
-    rx = []
-    old_len = 0
-    start_time = time.monotonic()
-    while time.monotonic() - start_time < 5 or len(rx) > old_len:
-      old_len = len(rx)
-      rx.extend(panda_jungle.can_recv())
-    print(f"Received {len(rx)} messages", time.monotonic())
+    for bus, count in ((0, 2 * NUM_MESSAGES_PER_BUS), (1, NUM_MESSAGES_PER_BUS), (2, NUM_MESSAGES_PER_BUS)):
+      for receipt in (0, 0x80):
+        actual = received.count((0xaa, b"\xaa" * 8, bus | receipt))
+        assert actual == count, (bus, receipt, actual, count)
+    assert len(received) == 8 * NUM_MESSAGES_PER_BUS
 
-    # All messages should have been received
-    if len(rx) != 4 * NUM_MESSAGES_PER_BUS:
-      raise Exception("Did not receive all messages!")
+  def test_interrupt_load(self):
+    p = self.p
+    p.set_safety_mode(CarParams.SafetyModel.allOutput)
+    p.set_can_loopback(True)
+    p.set_heartbeat_disabled()
+    for bus in range(3):
+      p.set_can_speed_kbps(bus, 1000)
+
+    # fixed 8000 msg/s, the budget fails with an MPU open per safety hook
+    rate = 8000
+    messages = [(0x200 + i, b"\xaa" * 8, i % 3) for i in range(rate // 100)]
+    rx_start = sum(p.can_health(bus)["total_rx_cnt"] for bus in range(3))
+    start = time.monotonic()
+    # 10 ms ticks, every poll is a DUT interrupt so all host traffic is fixed rate
+    for tick in range(300):
+      p.can_send_many(messages, timeout=0)
+      p.can_recv()
+      time.sleep(max(0, start + (tick + 1) * 0.01 - time.monotonic()))
+    # interrupt_load is the last full 1 s window
+    load = p.health()["interrupt_load"]
+    rx = sum(p.can_health(bus)["total_rx_cnt"] for bus in range(3)) - rx_start
+    assert load < 0.56, load
+    assert rx > 0.95 * rate * (time.monotonic() - start), rx
 
   def test_message_integrity(self):
     p = self.p
